@@ -124,3 +124,18 @@ azure-credentials.json
 *.temp
 .tmp/
 .temp/
+
+# Node modules
+node_modules/
+dist/
+
+# Deployment files
+*.zip
+deployment-token.txt
+api-deployment.zip
+api.zip
+
+# Test outputs
+*.log
+test-results/
+e2e-results/
