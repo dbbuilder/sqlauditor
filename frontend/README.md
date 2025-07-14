@@ -51,3 +51,4 @@ swa deploy ./dist --app-name sqlanalyzer-web
 Default credentials:
 - Username: admin
 - Password: AnalyzeThis!!
+# Force rebuild
