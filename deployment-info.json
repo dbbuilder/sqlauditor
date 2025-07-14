@@ -1,0 +1,11 @@
+{
+    "JwtSecretConfigured":  true,
+    "ApiUrl":  "https://sqlanalyzer-api.azurewebsites.net",
+    "UiUrl":  "https://black-desert-02d93d30f.2.azurestaticapps.net",
+    "AdminPasswordSet":  true,
+    "DeploymentTime":  {
+                           "value":  "\/Date(1752210151518)\/",
+                           "DisplayHint":  2,
+                           "DateTime":  "Thursday, July 10, 2025 10:02:31 PM"
+                       }
+}

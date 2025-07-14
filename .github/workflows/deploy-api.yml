@@ -1,0 +1,188 @@
+name: Deploy API to Azure
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'src/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  AZURE_WEBAPP_NAME: sqlanalyzer-api
+  AZURE_WEBAPP_PACKAGE_PATH: './publish'
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for version tagging
+    
+    - name: Generate Version Info
+      id: version
+      run: |
+        # Generate version based on date and run number
+        VERSION_DATE=$(date +'%Y.%m.%d')
+        VERSION="${VERSION_DATE}.${GITHUB_RUN_NUMBER}"
+        SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
+        DEPLOYMENT_ID="${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
+        
+        echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+        echo "SHORT_SHA=${SHORT_SHA}" >> $GITHUB_OUTPUT
+        echo "DEPLOYMENT_ID=${DEPLOYMENT_ID}" >> $GITHUB_OUTPUT
+        echo "BUILD_TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+        
+        # Log version info
+        echo "🏷️ Version: ${VERSION}"
+        echo "🔨 Commit: ${SHORT_SHA}"
+        echo "🚀 Deployment ID: ${DEPLOYMENT_ID}"
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Update Project Version
+      run: |
+        # Update version in csproj files
+        find . -name "*.csproj" -type f -exec sed -i "s/<Version>.*<\/Version>/<Version>${{ steps.version.outputs.VERSION }}<\/Version>/g" {} \;
+        find . -name "*.csproj" -type f -exec sed -i "s/<AssemblyVersion>.*<\/AssemblyVersion>/<AssemblyVersion>${{ steps.version.outputs.VERSION }}<\/AssemblyVersion>/g" {} \;
+        find . -name "*.csproj" -type f -exec sed -i "s/<FileVersion>.*<\/FileVersion>/<FileVersion>${{ steps.version.outputs.VERSION }}<\/FileVersion>/g" {} \;
+        
+        # Add version properties if they don't exist
+        for proj in $(find . -name "*.csproj" -type f); do
+          if ! grep -q "<Version>" "$proj"; then
+            sed -i '/<PropertyGroup>/a\    <Version>${{ steps.version.outputs.VERSION }}</Version>' "$proj"
+            sed -i '/<PropertyGroup>/a\    <AssemblyVersion>${{ steps.version.outputs.VERSION }}</AssemblyVersion>' "$proj"
+            sed -i '/<PropertyGroup>/a\    <FileVersion>${{ steps.version.outputs.VERSION }}</FileVersion>' "$proj"
+          fi
+        done
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: |
+        dotnet build --configuration Release --no-restore \
+          -p:Version=${{ steps.version.outputs.VERSION }} \
+          -p:AssemblyVersion=${{ steps.version.outputs.VERSION }} \
+          -p:FileVersion=${{ steps.version.outputs.VERSION }} \
+          -p:InformationalVersion="${{ steps.version.outputs.VERSION }}+${{ steps.version.outputs.SHORT_SHA }}"
+    
+    - name: Test
+      run: dotnet test --no-restore --verbosity normal --logger "console;verbosity=detailed"
+    
+    - name: Publish
+      run: |
+        dotnet publish src/SqlAnalyzer.Api/SqlAnalyzer.Api.csproj \
+          -c Release \
+          -o ${{ env.AZURE_WEBAPP_PACKAGE_PATH }} \
+          -p:Version=${{ steps.version.outputs.VERSION }} \
+          -p:InformationalVersion="${{ steps.version.outputs.VERSION }}+${{ steps.version.outputs.SHORT_SHA }}"
+    
+    - name: Create Version File
+      run: |
+        cat > ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/version.json <<EOF
+        {
+          "version": "${{ steps.version.outputs.VERSION }}",
+          "commit": "${{ steps.version.outputs.SHORT_SHA }}",
+          "buildNumber": "${{ github.run_number }}",
+          "buildId": "${{ github.run_id }}",
+          "deploymentId": "${{ steps.version.outputs.DEPLOYMENT_ID }}",
+          "timestamp": "${{ steps.version.outputs.BUILD_TIMESTAMP }}",
+          "branch": "${{ github.ref_name }}",
+          "repository": "${{ github.repository }}"
+        }
+        EOF
+    
+    - name: Deploy to Azure Web App
+      id: deploy
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+    
+    - name: Set App Settings
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Configure App Settings
+      run: |
+        az webapp config appsettings set \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group rg-sqlanalyzer \
+          --settings \
+            BUILD_TIMESTAMP="${{ steps.version.outputs.BUILD_TIMESTAMP }}" \
+            GITHUB_SHA="${{ github.sha }}" \
+            GITHUB_RUN_NUMBER="${{ github.run_number }}" \
+            DEPLOYMENT_ID="${{ steps.version.outputs.DEPLOYMENT_ID }}" \
+            VERSION="${{ steps.version.outputs.VERSION }}"
+    
+    - name: Verify Deployment
+      run: |
+        echo "⏳ Waiting for deployment to be ready..."
+        sleep 30
+        
+        # Check version endpoint
+        echo "📡 Checking version endpoint..."
+        RESPONSE=$(curl -s https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/api/version)
+        echo "Response: $RESPONSE"
+        
+        # Verify deployment ID matches
+        DEPLOYED_ID=$(echo $RESPONSE | jq -r '.deployment.deploymentId' || echo "error")
+        if [[ "$DEPLOYED_ID" == "${{ steps.version.outputs.DEPLOYMENT_ID }}" ]]; then
+          echo "✅ Deployment verified! Version ${{ steps.version.outputs.VERSION }} is live"
+        else
+          echo "❌ Deployment verification failed. Expected ID: ${{ steps.version.outputs.DEPLOYMENT_ID }}, Got: $DEPLOYED_ID"
+          exit 1
+        fi
+    
+    - name: Create GitHub Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.version.outputs.VERSION }}
+        release_name: Release ${{ steps.version.outputs.VERSION }}
+        body: |
+          ## 🚀 Deployment Information
+          - **Version**: ${{ steps.version.outputs.VERSION }}
+          - **Commit**: ${{ steps.version.outputs.SHORT_SHA }}
+          - **Deployment ID**: ${{ steps.version.outputs.DEPLOYMENT_ID }}
+          - **Build Number**: ${{ github.run_number }}
+          - **Timestamp**: ${{ steps.version.outputs.BUILD_TIMESTAMP }}
+          
+          ## 🔗 Links
+          - [API Health Check](https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/api/version/health)
+          - [API Version Info](https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/api/version)
+          - [Build Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        draft: false
+        prerelease: false
+    
+    - name: Deployment Summary
+      if: always()
+      run: |
+        echo "## 📊 Deployment Summary"
+        echo "| Property | Value |"
+        echo "|----------|-------|"
+        echo "| Version | ${{ steps.version.outputs.VERSION }} |"
+        echo "| Commit | ${{ steps.version.outputs.SHORT_SHA }} |"
+        echo "| Deployment ID | ${{ steps.version.outputs.DEPLOYMENT_ID }} |"
+        echo "| Build Number | ${{ github.run_number }} |"
+        echo "| Status | ${{ job.status }} |"

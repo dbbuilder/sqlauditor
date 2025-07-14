@@ -1,0 +1,126 @@
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Coverage reports
+coverage/
+*.coverage
+*.coveragexml
+TestResults/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Publishing
+publish/
+*.publish.xml
+*.azurePubxml
+
+# Database files
+*.mdf
+*.ldf
+*.ndf
+
+# Backup files
+*.bak
+_UpgradeReport_Files/
+Backup*/
+UpgradeLog*.XML
+UpgradeLog*.htm
+ServiceFabricBackup/
+*.rptproj.bak
+
+# SQL Server files
+*.mdf
+*.ldf
+*.ndf
+
+# Business Intelligence projects
+*.rdl.data
+*.bim.layout
+*.bim_*.settings
+*.rptproj.rsuser
+*- Backup*.rdl
+
+# Local test configuration
+appsettings.Development.json
+appsettings.Local.json
+*.local.json
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.azure.local
+*.local.env
+*-credentials.json
+azure-credentials.json
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/

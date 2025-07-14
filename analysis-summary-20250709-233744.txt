@@ -1,0 +1,28 @@
+SQL ANALYZER - DATABASE ANALYSIS REPORT
+Generated: 2025-07-09 23:37:44
+Database: SVDB_CaptureT
+Server: sqltest.schoolvision.net,14333
+
+SUMMARY:
+- Tables: 4 analyzed
+- Total Rows: 84584
+- Missing Indexes: 1
+- Fragmented Indexes: 2
+- Outdated Statistics: 10
+- Empty Tables: 0
+
+TOP TABLES:
+
+Schema Table                   RowCount
+------ -----                   --------
+dbo    Merced_SISImport           46164
+dbo    Merced_PersonBadgeCache    18271
+dbo    Merced_CaptureT            15355
+dbo    Merced_Photo                4794
+
+
+
+RECOMMENDATIONS:
+• 1 missing indexes detected - consider creating these indexes
+• 2 indexes with high fragmentation - consider rebuilding
+• 10 outdated statistics - consider updating statistics

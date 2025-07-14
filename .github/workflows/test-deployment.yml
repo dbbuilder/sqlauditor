@@ -1,0 +1,173 @@
+name: Test Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of test to run'
+        required: true
+        default: 'smoke'
+        type: choice
+        options:
+          - smoke
+          - full
+          - performance
+          - rollback
+
+jobs:
+  test-deployment:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Test Environment
+      run: |
+        echo "🧪 Running ${{ github.event.inputs.test_type }} tests"
+        echo "API_URL=https://sqlanalyzer-api.azurewebsites.net" >> $GITHUB_ENV
+    
+    - name: Get Current Deployment Info
+      id: current
+      run: |
+        RESPONSE=$(curl -s ${{ env.API_URL }}/api/version)
+        echo "Response: $RESPONSE"
+        
+        CURRENT_VERSION=$(echo $RESPONSE | jq -r '.version.assembly' || echo "unknown")
+        CURRENT_DEPLOYMENT=$(echo $RESPONSE | jq -r '.deployment.deploymentId' || echo "unknown")
+        CURRENT_COMMIT=$(echo $RESPONSE | jq -r '.deployment.commit' || echo "unknown")
+        
+        echo "CURRENT_VERSION=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
+        echo "CURRENT_DEPLOYMENT=${CURRENT_DEPLOYMENT}" >> $GITHUB_OUTPUT
+        echo "CURRENT_COMMIT=${CURRENT_COMMIT}" >> $GITHUB_OUTPUT
+        
+        echo "📋 Current Deployment:"
+        echo "   Version: ${CURRENT_VERSION}"
+        echo "   Deployment ID: ${CURRENT_DEPLOYMENT}"
+        echo "   Commit: ${CURRENT_COMMIT}"
+    
+    - name: Smoke Tests
+      if: github.event.inputs.test_type == 'smoke' || github.event.inputs.test_type == 'full'
+      run: |
+        echo "🔥 Running smoke tests..."
+        
+        # Test 1: Health Check
+        echo "Testing health endpoint..."
+        HEALTH=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.API_URL }}/health)
+        if [ "$HEALTH" != "200" ]; then
+          echo "❌ Health check failed with status: $HEALTH"
+          exit 1
+        fi
+        echo "✅ Health check passed"
+        
+        # Test 2: Version endpoint
+        echo "Testing version endpoint..."
+        VERSION_STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.API_URL }}/api/version)
+        if [ "$VERSION_STATUS" != "200" ]; then
+          echo "❌ Version endpoint failed with status: $VERSION_STATUS"
+          exit 1
+        fi
+        echo "✅ Version endpoint passed"
+        
+        # Test 3: API endpoints
+        echo "Testing API endpoints..."
+        TYPES_STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.API_URL }}/api/v1/analysis/types)
+        if [ "$TYPES_STATUS" != "200" ]; then
+          echo "❌ Analysis types endpoint failed with status: $TYPES_STATUS"
+          exit 1
+        fi
+        echo "✅ API endpoints passed"
+    
+    - name: Full Integration Tests
+      if: github.event.inputs.test_type == 'full'
+      run: |
+        echo "🧪 Running full integration tests..."
+        
+        # Test connection endpoint
+        echo "Testing connection test endpoint..."
+        CONNECTION_TEST=$(curl -s -X POST ${{ env.API_URL }}/api/v1/analysis/test-connection \
+          -H "Content-Type: application/json" \
+          -d '{"connectionString":"Server=test;Database=test;","databaseType":"SqlServer"}' \
+          -w "\n%{http_code}")
+        
+        STATUS_CODE=$(echo "$CONNECTION_TEST" | tail -n1)
+        RESPONSE=$(echo "$CONNECTION_TEST" | head -n-1)
+        
+        if [ "$STATUS_CODE" != "200" ]; then
+          echo "❌ Connection test endpoint failed with status: $STATUS_CODE"
+          exit 1
+        fi
+        echo "✅ Connection test endpoint working"
+        echo "Response: $RESPONSE"
+    
+    - name: Performance Tests
+      if: github.event.inputs.test_type == 'performance' || github.event.inputs.test_type == 'full'
+      run: |
+        echo "⚡ Running performance tests..."
+        
+        # Warm up
+        for i in {1..5}; do
+          curl -s ${{ env.API_URL }}/api/version > /dev/null
+        done
+        
+        # Measure response times
+        echo "Measuring response times (10 requests)..."
+        total_time=0
+        for i in {1..10}; do
+          response_time=$(curl -s -o /dev/null -w "%{time_total}" ${{ env.API_URL }}/api/version)
+          response_time_ms=$(echo "$response_time * 1000" | bc)
+          echo "Request $i: ${response_time_ms}ms"
+          total_time=$(echo "$total_time + $response_time" | bc)
+        done
+        
+        avg_time=$(echo "scale=3; $total_time / 10 * 1000" | bc)
+        echo "📊 Average response time: ${avg_time}ms"
+        
+        # Check if response time is acceptable (< 500ms)
+        if (( $(echo "$avg_time > 500" | bc -l) )); then
+          echo "⚠️  Warning: Average response time is high (${avg_time}ms)"
+        else
+          echo "✅ Performance is acceptable"
+        fi
+    
+    - name: Rollback Test
+      if: github.event.inputs.test_type == 'rollback'
+      run: |
+        echo "🔄 Testing rollback capability..."
+        echo "Current version: ${{ steps.current.outputs.CURRENT_VERSION }}"
+        echo "This would trigger a rollback to the previous version"
+        echo "⚠️  Rollback test is informational only - no actual rollback performed"
+    
+    - name: Generate Test Report
+      if: always()
+      run: |
+        cat > test-report.md << EOF
+        # Deployment Test Report
+        
+        ## Test Information
+        - **Test Type**: ${{ github.event.inputs.test_type }}
+        - **Run ID**: ${{ github.run_id }}
+        - **Timestamp**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+        
+        ## Current Deployment
+        - **Version**: ${{ steps.current.outputs.CURRENT_VERSION }}
+        - **Deployment ID**: ${{ steps.current.outputs.CURRENT_DEPLOYMENT }}
+        - **Commit**: ${{ steps.current.outputs.CURRENT_COMMIT }}
+        - **API URL**: ${{ env.API_URL }}
+        
+        ## Test Results
+        - **Status**: ${{ job.status }}
+        
+        ## Links
+        - [API Version Info](${{ env.API_URL }}/api/version)
+        - [API Health Check](${{ env.API_URL }}/health)
+        - [Workflow Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        EOF
+        
+        cat test-report.md
+    
+    - name: Upload Test Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-report-${{ github.run_id }}
+        path: test-report.md

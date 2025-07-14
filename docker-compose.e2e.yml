@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # SQL Server for testing
+  sqlserver-test:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sqlanalyzer-test-db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Test@123456!
+      - MSSQL_PID=Developer
+    ports:
+      - "15525:1433"
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "Test@123456!", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sqlanalyzer-test
+
+  # Redis for distributed caching (optional)
+  redis-test:
+    image: redis:7-alpine
+    container_name: sqlanalyzer-test-redis
+    ports:
+      - "15590:6379"
+    networks:
+      - sqlanalyzer-test
+
+  # API service
+  api:
+    build:
+      context: .
+      dockerfile: src/SqlAnalyzer.Api/Dockerfile
+    container_name: sqlanalyzer-test-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__TestDatabase=Server=sqlserver-test;Database=TestDB;User Id=sa;Password=Test@123456!;TrustServerCertificate=true;
+      - ConnectionStrings__Redis=redis-test:6379
+      - Redis__Enabled=true
+    ports:
+      - "15510:80"
+    depends_on:
+      sqlserver-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_started
+    networks:
+      - sqlanalyzer-test
+
+  # Web UI
+  web:
+    build:
+      context: .
+      dockerfile: src/SqlAnalyzer.Web/Dockerfile
+    container_name: sqlanalyzer-test-web
+    environment:
+      - VITE_API_URL=http://localhost:15510
+    ports:
+      - "15565:80"
+    depends_on:
+      - api
+    networks:
+      - sqlanalyzer-test
+
+networks:
+  sqlanalyzer-test:
+    driver: bridge

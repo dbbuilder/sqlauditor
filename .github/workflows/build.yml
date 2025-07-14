@@ -1,0 +1,120 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+      fail-fast: false
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Test with coverage
+      run: dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+
+    - name: Generate coverage report
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        dotnet tool install --global dotnet-reportgenerator-globaltool
+        reportgenerator -reports:coverage/**/coverage.cobertura.xml -targetdir:coverage/report -reporttypes:Html,Cobertura
+
+    - name: Upload coverage to Codecov
+      if: matrix.os == 'ubuntu-latest'
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ./coverage
+        files: '**/coverage.cobertura.xml'
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: Upload coverage reports
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: coverage/report/
+
+  code-quality:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Install dotnet-format
+      run: dotnet tool install --global dotnet-format
+
+    - name: Check formatting
+      run: dotnet format --verify-no-changes --verbosity diagnostic
+
+    - name: Run code analysis
+      run: dotnet build /p:EnableNETAnalyzers=true /p:AnalysisMode=AllEnabledByDefault /p:EnforceCodeStyleInBuild=true
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [build-and-test, code-quality]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Create release packages
+      run: |
+        dotnet publish src/SqlAnalyzer.CLI/SqlAnalyzer.CLI.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o ./publish/win-x64
+        dotnet publish src/SqlAnalyzer.CLI/SqlAnalyzer.CLI.csproj -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -o ./publish/linux-x64
+        dotnet publish src/SqlAnalyzer.CLI/SqlAnalyzer.CLI.csproj -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -o ./publish/osx-x64
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-packages
+        path: ./publish/

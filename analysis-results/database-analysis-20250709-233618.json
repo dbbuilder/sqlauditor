@@ -1,0 +1,189 @@
+[
+  {
+    "Category": "Performance",
+    "Title": "High Index Fragmentation",
+    "Severity": "High",
+    "Timestamp": "2025-07-09T23:36:17.9359645-07:00",
+    "Data": [
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "Merced_Photo PK__Merced_P__734EDAAEDF1E585A CLUSTERED INDEX 91.8781725888325 197 ",
+        "HasErrors": false,
+        "TableName": "Merced_Photo",
+        "IndexName": "PK__Merced_P__734EDAAEDF1E585A",
+        "index_type_desc": "CLUSTERED INDEX",
+        "avg_fragmentation_in_percent": 91.87817258883248,
+        "page_count": 197,
+        "record_count": null
+      },
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "Merced_Photo IX_Merced_Photo_IDNumber_Email NONCLUSTERED INDEX 87.4251497005988 167 ",
+        "HasErrors": false,
+        "TableName": "Merced_Photo",
+        "IndexName": "IX_Merced_Photo_IDNumber_Email",
+        "index_type_desc": "NONCLUSTERED INDEX",
+        "avg_fragmentation_in_percent": 87.42514970059881,
+        "page_count": 167,
+        "record_count": null
+      }
+    ],
+    "Description": "Found 2 indexes with fragmentation > 30%"
+  },
+  {
+    "Category": "Performance",
+    "Title": "Outdated Statistics",
+    "Severity": "Medium",
+    "Timestamp": "2025-07-09T23:36:17.991863-07:00",
+    "Data": [
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "Merced_PersonBadgeCache _WA_Sys_00000005_41EDCAC5 07/07/2025 17:58:02 18271 18271 19180 104.98",
+        "HasErrors": false
+      },
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "sysschobjs _WA_Sys_00000005_00000022 01/17/2025 18:20:37 2547 2547 288 11.31",
+        "HasErrors": false
+      },
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "sysschobjs _WA_Sys_0000000B_00000022 01/17/2025 21:20:00 2548 2548 272 10.68",
+        "HasErrors": false
+      },
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "sysschobjs _WA_Sys_00000009_00000022 01/17/2025 18:25:39 2548 2548 190 7.46",
+        "HasErrors": false
+      },
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "sysschobjs nc2 10/31/2024 14:57:30 2543 2543 167 6.57",
+        "HasErrors": false
+      },
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "sysschobjs _WA_Sys_00000006_00000022 10/31/2024 14:57:30 2543 2543 165 6.49",
+        "HasErrors": false
+      },
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "sysschobjs _WA_Sys_00000008_00000022 10/31/2024 14:57:30 2543 2543 165 6.49",
+        "HasErrors": false
+      },
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "sysschobjs nc3 10/31/2024 14:57:30 2543 2543 165 6.49",
+        "HasErrors": false
+      },
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "sysschobjs nc1 10/31/2024 14:57:30 2543 2543 165 6.49",
+        "HasErrors": false
+      },
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "sysschobjs _WA_Sys_00000003_00000022 11/11/2024 10:42:07 2546 2546 162 6.36",
+        "HasErrors": false
+      },
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "sysschobjs clst 11/11/2024 10:42:07 2546 2546 162 6.36",
+        "HasErrors": false
+      },
+      {
+        "RowError": "",
+        "RowState": 2,
+        "Table": "System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow System.Data.DataRow",
+        "ItemArray": "sysschobjs _WA_Sys_0000000C_00000022 01/17/2025 18:20:37 2547 2547 161 6.32",
+        "HasErrors": false
+      }
+    ],
+    "Description": "Found 12 statistics that need updating"
+  },
+  {
+    "Category": "Performance",
+    "Title": "Slow Queries Detected",
+    "Severity": "High",
+    "Timestamp": "2025-07-09T23:36:18.4415538-07:00",
+    "Data": [
+      {
+        "avg_duration_ms": 151988,
+        "execution_count": 4,
+        "query_text": "WAITFOR(RECEIVE conversation_handle, service_contract_name, message_type_name, message_body \r\n                FROM ExternalMailQueue INTO @msgs), TIMEOUT @rec_timeout"
+      },
+      {
+        "avg_duration_ms": 7520,
+        "execution_count": 1,
+        "query_text": "DELETE TOP (@top_count) sys.plan_persist_runtime_stats          \tWHERE last_execution_time < @threshold_time"
+      },
+      {
+        "avg_duration_ms": 5672,
+        "execution_count": 1,
+        "query_text": "DELETE TOP (@top_count) sys.plan_persist_runtime_stats          \tWHERE last_execution_time < @threshold_time"
+      },
+      {
+        "avg_duration_ms": 4997,
+        "execution_count": 1,
+        "query_text": "DELETE TOP (@top_count) sys.plan_persist_runtime_stats          \tWHERE last_execution_time < @threshold_time"
+      },
+      {
+        "avg_duration_ms": 3839,
+        "execution_count": 1,
+        "query_text": "UPDATE account SET currentbalance = dbo.calculateaccountbalance(accountid), AmountDue = InitialAmountDue, LastBalanceSyncDateTime = DATEADD(ss, -60, GETDATE())\r\nWHERE (AccountID=@AccountID OR (ISNULL(@AccountID, -1)<0 AND (accountid IN(SELECT accountid\r\n                                                                           FROM accounttransaction AS at) OR (isactive=1 AND accountid NOT IN(SELECT accountid\r\n                                                                                                                                              FROM accounttransaction)))))"
+      },
+      {
+        "avg_duration_ms": 2674,
+        "execution_count": 1,
+        "query_text": "DELETE TOP (@top_count) sys.plan_persist_runtime_stats          \tWHERE last_execution_time < @threshold_time"
+      },
+      {
+        "avg_duration_ms": 2400,
+        "execution_count": 1,
+        "query_text": "DELETE TOP (@top_count) sys.plan_persist_runtime_stats          \tWHERE last_execution_time < @threshold_time"
+      },
+      {
+        "avg_duration_ms": 1289,
+        "execution_count": 1,
+        "query_text": "DELETE TOP(@top_count) WS                                       \tFROM sys.plan_persist_wait_stats WS                             \tJOIN sys.plan_persist_runtime_stats_interval I                  \tON WS.runtime_stats_interval_id = I.runtime_stats_interval_id   \tWHERE I.end_time < @threshold_time"
+      },
+      {
+        "avg_duration_ms": 1258,
+        "execution_count": 1,
+        "query_text": "DELETE #T  \r\nWHERE TransactionID IN(SELECT TransactionID  \r\n                       FROM #T AS T  \r\n                       WHERE TransactionID IN(SELECT POSTransactionID  \r\n                                              FROM AccountTransaction AS AT  \r\n                                              WHERE AT.POSTransactionID IS NOT NULL  \r\n                                                    --AND T.LocationID=AT.POSLocationID Hannah 5-1-24 Make sure AT's that became tickets don't go back to another copy of the AT  \r\n                                                    AND VoidedDateTime IS NULL))"
+      },
+      {
+        "avg_duration_ms": 1196,
+        "execution_count": 1,
+        "query_text": "DELETE TOP (@top_count) sys.plan_persist_runtime_stats          \tWHERE last_execution_time < @threshold_time"
+      }
+    ],
+    "Description": "Found 10 queries with average duration > 1 second"
+  }
+]

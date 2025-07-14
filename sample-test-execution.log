@@ -1,0 +1,195 @@
+========================================
+SQL Analyzer - Test Diagnostics Runner
+Started at: 2024-01-15 10:30:45
+========================================
+
+System Information:
+  OS: Microsoft Windows NT 10.0.19045.0
+  .NET SDKs installed:
+    6.0.418 [C:\Program Files\dotnet\sdk]
+    7.0.405 [C:\Program Files\dotnet\sdk]
+    8.0.101 [C:\Program Files\dotnet\sdk]
+
+Checking prerequisites...
+  ✓ .env file found
+  ✓ Integration tests enabled
+  ✓ SQL Server connection string found
+  Testing database connection...
+
+Restoring NuGet packages...
+
+--- Running: Package Restore ---
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+✓ Completed in 1.23 seconds
+
+Building solution...
+
+--- Running: Build Solution ---
+  SqlAnalyzer.Shared -> bin\Release\net8.0\SqlAnalyzer.Shared.dll
+  SqlAnalyzer.Core -> bin\Release\net8.0\SqlAnalyzer.Core.dll
+  SqlAnalyzer.CLI -> bin\Release\net8.0\SqlAnalyzer.CLI.dll
+  SqlAnalyzer.Tests -> bin\Release\net8.0\SqlAnalyzer.Tests.dll
+✓ Completed in 3.45 seconds
+
+
+=== UNIT TESTS ===
+
+--- Running: Unit Tests ---
+Test run for SqlAnalyzer.Tests.dll (.NETCoreApp,Version=v8.0)
+Microsoft (R) Test Execution Command Line Tool Version 17.8.0
+
+Starting test execution, please wait...
+A total of 45 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    42, Skipped:     0, Total:    42, Duration: 2.1 s
+✓ Completed in 4.32 seconds
+
+
+=== INTEGRATION TESTS ===
+
+--- Running: Integration: SqlServerConnectionIntegrationTests ---
+Starting test execution, please wait...
+
+[10:30:55 INF] Testing connection to SQL Server database: SVDB_CaptureT
+[10:30:56 INF] Successfully connected to SQL Server database: SVDB_CaptureT
+  √ TestConnectionAsync_WithValidCredentials_ShouldReturnTrue [823ms]
+
+[10:30:57 INF] Testing connection to SQL Server database: SVDB_CaptureT
+  √ GetDatabaseVersionAsync_ShouldReturnVersionInfo [412ms]
+  Database version: SQL Server 2019 (15.0.4298.1) Standard Edition (64-bit)
+
+[10:30:58 INF] Testing connection to SQL Server database: SVDB_CaptureT
+  √ GetDatabaseSizeAsync_ShouldReturnPositiveSize [389ms]
+  Database size: 2,456.75 MB
+
+[10:30:59 INF] Opening connection to SqlServer database: SVDB_CaptureT
+  √ ExecuteQueryAsync_ReadOnlyQuery_ShouldReturnData [567ms]
+  Found 147 user tables in the database
+    - dbo.Users (Created: 2023-05-12 09:15:23)
+    - dbo.Orders (Created: 2023-05-12 09:16:45)
+    - dbo.Products (Created: 2023-05-12 09:17:02)
+    ... (showing first 3 of 147)
+
+✓ Completed in 5.89 seconds
+
+--- Running: Integration: TableAnalyzerIntegrationTests ---
+Starting test execution, please wait...
+
+[10:31:05 INF] Starting Table Analyzer analysis for database: SVDB_CaptureT
+[10:31:05 DBG] Collecting data for analysis
+[10:31:07 DBG] Collected information for 147 tables
+[10:31:07 DBG] Analyzing 147 objects
+[10:31:08 DBG] Added Critical finding: Table dbo.AuditLog has no primary key
+[10:31:08 DBG] Added Error finding: Table dbo.TempData is a heap table with 45,231 rows
+[10:31:08 DBG] Added Warning finding: Table dbo.UserPreferences is a wide table with 52 columns
+[10:31:08 DBG] Added Warning finding: Table dbo.SessionData has no indexes and contains 128,456 rows
+[10:31:08 DBG] Added Info finding: Table dbo.OrderHistory is large (8,456,231 rows, 4,521 MB)
+[10:31:09 INF] Completed Table Analyzer analysis in 3847ms. Found 23 issues
+
+Analysis completed for database: SVDB_CaptureT
+Total tables analyzed: 147
+Total findings: 23
+  Critical: 3
+  Error: 5
+  Warning: 8
+  Info: 7
+
+Findings:
+  [Critical] Table dbo.AuditLog has no primary key
+    Object: dbo.AuditLog
+    Recommendation: Every table should have a primary key to ensure data integrity
+
+  [Critical] Table dbo.TempData has no primary key
+    Object: dbo.TempData
+    Recommendation: Every table should have a primary key to ensure data integrity
+
+  [Error] Table dbo.OrderArchive is a heap table with 2,456,789 rows
+    Object: dbo.OrderArchive
+    Recommendation: Heap tables can cause performance issues. Consider adding a clustered index
+
+✓ Completed in 12.45 seconds
+
+--- Running: Integration: ConnectionFactoryIntegrationTests ---
+Starting test execution, please wait...
+
+[10:31:22 INF] Creating SqlServer connection
+[10:31:22 DBG] Parsed connection string - Server: sqltest.schoolvision.net,14333, Database: SVDB_CaptureT
+[10:31:22 DBG] Created SqlServer connection for database: SVDB_CaptureT
+  √ CreateConnection_WithSqlServerConnectionString_ShouldCreateWorkingConnection [1,234ms]
+
+[10:31:24 DBG] Detected SQL Server connection string
+  √ CreateConnection_AutoDetection_ShouldCorrectlyIdentifySqlServer [567ms]
+
+✓ Completed in 3.21 seconds
+
+--- Running: Integration: AnalysisReportGeneratorTests ---
+Starting test execution, please wait...
+
+[10:31:28 INF] Starting Table Analyzer analysis for database: SVDB_CaptureT
+[10:31:32 INF] Completed Table Analyzer analysis in 4123ms. Found 23 issues
+[10:31:33 INF] Generating JSON report (45.2 KB)
+[10:31:33 INF] Generating HTML report (128.7 KB)
+[10:31:34 INF] Generating Markdown report (32.1 KB)
+[10:31:34 INF] Generating CSV report (8.9 KB)
+
+Analysis reports generated in: TestResults\AnalysisReports\20240115_103134
+- JSON Report: analysis_result.json
+- HTML Report: analysis_report.html
+- Markdown Report: analysis_report.md
+- CSV Report: findings.csv
+
+✓ Completed in 8.76 seconds
+
+
+=== PERFORMANCE ANALYSIS ===
+Running performance analysis on TableAnalyzer...
+
+--- Running: Performance: TableAnalyzer ---
+[10:31:43 INF] Starting Table Analyzer analysis for database: SVDB_CaptureT
+[10:31:47 INF] Completed Table Analyzer analysis in 3,892ms. Found 23 issues
+Analysis completed in 3892ms
+Analysis duration from result: 3892.45ms
+
+✓ Completed in 4.12 seconds
+
+
+========================================
+TEST EXECUTION SUMMARY
+========================================
+Total Duration: 48.23 seconds
+Completed at: 2024-01-15 10:31:48
+
+Test Results:
+  Package Restore                          PASS ( 1.23s)
+  Build Solution                           PASS ( 3.45s)
+  Unit Tests                               PASS ( 4.32s)
+  Integration: SqlServerConnectionIntegrat PASS ( 5.89s)
+  Integration: TableAnalyzerIntegrationTes PASS (12.45s)
+  Integration: ConnectionFactoryIntegratio PASS ( 3.21s)
+  Integration: AnalysisReportGeneratorTest PASS ( 8.76s)
+  Performance: TableAnalyzer               PASS ( 4.12s)
+
+Summary:
+  Total Tests Run: 8
+  Passed: 8
+  Failed: 0
+  Total Test Time: 43.43s
+  Overhead Time: 4.8s
+
+Generated Files:
+  - .\TestResults\UnitTests\coverage.cobertura.xml
+  - .\TestResults\IntegrationTests\SqlServerConnectionIntegrationTests.trx
+  - .\TestResults\IntegrationTests\TableAnalyzerIntegrationTests.trx
+  - .\TestResults\IntegrationTests\ConnectionFactoryIntegrationTests.trx
+  - .\TestResults\IntegrationTests\AnalysisReportGeneratorTests.trx
+  - .\TestResults\AnalysisReports\20240115_103134\analysis_result.json
+  - .\TestResults\AnalysisReports\20240115_103134\analysis_report.html
+  - .\TestResults\AnalysisReports\20240115_103134\analysis_report.md
+  - .\TestResults\AnalysisReports\20240115_103134\findings.csv
+
+Checking for common issues...
+
+Diagnostic report saved to: ./TestResults/diagnostic-report-20240115-103148.txt
+
+TEST RUN SUCCEEDED
