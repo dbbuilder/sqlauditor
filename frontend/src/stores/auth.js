@@ -2,6 +2,9 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+console.log('Auth Store API Base URL:', API_BASE_URL) // Debug log
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
@@ -22,7 +25,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
       
       try {
-        const response = await axios.post('/api/v1/auth/login', {
+        const response = await axios.post(`${API_BASE_URL}/api/v1/auth/login`, {
           username,
           password
         })
@@ -51,7 +54,7 @@ export const useAuthStore = defineStore('auth', {
 
     async logout() {
       try {
-        await axios.post('/api/v1/auth/logout')
+        await axios.post(`${API_BASE_URL}/api/v1/auth/logout`)
       } catch (error) {
         console.error('Logout error:', error)
       }
@@ -90,7 +93,7 @@ export const useAuthStore = defineStore('auth', {
         axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`
         
         // Verify token with server
-        const response = await axios.get('/api/v1/auth/verify')
+        const response = await axios.get(`${API_BASE_URL}/api/v1/auth/verify`)
         
         this.user = { username: response.data.username, role: response.data.role }
         this.isAuthenticated = true
