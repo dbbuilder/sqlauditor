@@ -99,11 +99,11 @@
             <div class="field">
               <label>Additional Options</label>
               <div class="field-checkbox">
-                <Checkbox v-model="connectionBuilder.trustServerCertificate" inputId="trustCert" />
+                <Checkbox v-model="connectionBuilder.trustServerCertificate" :binary="true" inputId="trustCert" />
                 <label for="trustCert">Trust Server Certificate</label>
               </div>
               <div class="field-checkbox">
-                <Checkbox v-model="connectionBuilder.encrypt" inputId="encrypt" />
+                <Checkbox v-model="connectionBuilder.encrypt" :binary="true" inputId="encrypt" />
                 <label for="encrypt">Encrypt Connection</label>
               </div>
             </div>
