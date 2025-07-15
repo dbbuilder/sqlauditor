@@ -69,8 +69,8 @@ class ApiService {
   async testConnection(connectionString, databaseType) {
     if (USE_MOCK) return mockApi.testConnection({ connectionString, databaseType })
     const response = await apiClient.post('/analysis/test-connection', {
-      connectionString,
-      databaseType,
+      ConnectionString: connectionString,
+      DatabaseType: databaseType,
     })
     return response.data
   }

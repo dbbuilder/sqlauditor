@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Debug</title>
+</head>
+<body>
+    <h1>SQL Analyzer API Debug</h1>
+    
+    <h2>1. Test Login</h2>
+    <button onclick="testLogin()">Test Login</button>
+    <pre id="loginResult"></pre>
+    
+    <h2>2. Test Connection</h2>
+    <button onclick="testConnectionApi()">Test Connection API</button>
+    <pre id="connectionResult"></pre>
+    
+    <h2>3. Test SignalR</h2>
+    <button onclick="testSignalR()">Test SignalR</button>
+    <pre id="signalrResult"></pre>
+
+    <script>
+        let authToken = null;
+        
+        async function testLogin() {
+            const result = document.getElementById('loginResult');
+            result.textContent = 'Testing login...';
+            
+            try {
+                const response = await fetch('https://sqlanalyzer-api.azurewebsites.net/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'AnalyzeThis!!'
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    authToken = data.token;
+                    result.textContent = `Login successful!\nToken: ${authToken.substring(0, 50)}...`;
+                    result.style.color = 'green';
+                } else {
+                    result.textContent = `Login failed: ${JSON.stringify(data, null, 2)}`;
+                    result.style.color = 'red';
+                }
+            } catch (error) {
+                result.textContent = `Error: ${error.message}`;
+                result.style.color = 'red';
+            }
+        }
+        
+        async function testConnectionApi() {
+            const result = document.getElementById('connectionResult');
+            
+            if (!authToken) {
+                result.textContent = 'Please login first!';
+                result.style.color = 'red';
+                return;
+            }
+            
+            result.textContent = 'Testing connection endpoint...';
+            
+            const payload = {
+                connectionString: 'Server=localhost;Database=master;Trusted_Connection=true;',
+                databaseType: 0 // 0 = SqlServer
+            };
+            
+            console.log('Sending payload:', payload);
+            
+            try {
+                const response = await fetch('https://sqlanalyzer-api.azurewebsites.net/api/v1/analysis/test-connection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                result.textContent = `Status: ${response.status}\n${JSON.stringify(data, null, 2)}`;
+                result.style.color = response.ok ? 'green' : 'red';
+            } catch (error) {
+                result.textContent = `Error: ${error.message}`;
+                result.style.color = 'red';
+            }
+        }
+        
+        async function testSignalR() {
+            const result = document.getElementById('signalrResult');
+            
+            if (!authToken) {
+                result.textContent = 'Please login first!';
+                result.style.color = 'red';
+                return;
+            }
+            
+            result.textContent = 'Testing SignalR negotiate...';
+            
+            try {
+                const response = await fetch('https://sqlanalyzer-api.azurewebsites.net/hubs/analysis/negotiate?negotiateVersion=1', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    result.textContent = `SignalR negotiate successful!\n${JSON.stringify(data, null, 2)}`;
+                    result.style.color = 'green';
+                } else {
+                    result.textContent = `SignalR negotiate failed: ${response.status} ${response.statusText}`;
+                    result.style.color = 'red';
+                }
+            } catch (error) {
+                result.textContent = `Error: ${error.message}`;
+                result.style.color = 'red';
+            }
+        }
+    </script>
+</body>
+</html>

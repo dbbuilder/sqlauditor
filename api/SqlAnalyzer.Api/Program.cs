@@ -135,7 +135,10 @@ try
     builder.Services.AddScoped<IJwtService, JwtService>();
 
     // Add SignalR for real-time updates
-    builder.Services.AddSignalR();
+    builder.Services.AddSignalR(options =>
+    {
+        options.EnableDetailedErrors = true;
+    });
 
     // Add response compression
     builder.Services.AddResponseCompression();

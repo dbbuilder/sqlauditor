@@ -42,7 +42,7 @@
               />
             </div>
 
-            <div class="field" v-if="form.databaseType === 'SqlServer'">
+            <div class="field" v-if="form.databaseType === 0">
               <label for="port">Port (optional)</label>
               <InputText 
                 v-model="connectionBuilder.port" 
@@ -250,7 +250,7 @@ const analysisStore = useAnalysisStore()
 
 const form = reactive({
   connectionString: '',
-  databaseType: 'SqlServer',
+  databaseType: 0, // SqlServer = 0
   analysisType: 'comprehensive',
   options: {
     includeIndexAnalysis: true,
@@ -264,9 +264,9 @@ const form = reactive({
 })
 
 const databaseTypes = [
-  { label: 'SQL Server', value: 'SqlServer' },
-  { label: 'PostgreSQL', value: 'PostgreSQL' },
-  { label: 'MySQL', value: 'MySQL' }
+  { label: 'SQL Server', value: 0 }, // SqlServer = 0
+  { label: 'PostgreSQL', value: 1 }, // PostgreSql = 1
+  { label: 'MySQL', value: 2 }      // MySql = 2
 ]
 
 const analysisTypes = ref([])
