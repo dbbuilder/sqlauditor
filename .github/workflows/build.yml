@@ -21,10 +21,19 @@ jobs:
       fail-fast: false
 
     steps:
+    - name: Clean workspace
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          if exist api\test-publish? rmdir /s /q "api\test-publish?"
+          git config --global core.protectNTFS false
+        fi
+      shell: bash
+      
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        clean: true
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
