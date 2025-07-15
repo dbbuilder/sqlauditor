@@ -21,6 +21,12 @@ jobs:
       fail-fast: false
 
     steps:
+    - name: Configure git
+      if: runner.os == 'Windows'
+      run: |
+        git config --global core.protectNTFS false
+      shell: cmd
+        
     - name: Checkout code
       uses: actions/checkout@v4
       with:
