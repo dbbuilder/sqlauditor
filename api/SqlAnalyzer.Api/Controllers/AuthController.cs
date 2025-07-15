@@ -22,7 +22,18 @@ public class AuthController : ControllerBase
         _jwtService = jwtService;
         _configuration = configuration;
         _logger = logger;
+        // First try to get from Authentication section, then use defaults from Jwt if available
         _authSettings = configuration.GetSection("Authentication").Get<AuthSettings>() ?? new AuthSettings();
+        
+        // If no authentication settings found, check if we have Jwt configuration
+        if (string.IsNullOrEmpty(_authSettings.JwtSecret))
+        {
+            var jwtKey = configuration["Jwt:Key"];
+            if (!string.IsNullOrEmpty(jwtKey))
+            {
+                _authSettings.JwtSecret = jwtKey;
+            }
+        }
     }
 
     [HttpPost("login")]
@@ -31,6 +42,9 @@ public class AuthController : ControllerBase
     {
         try
         {
+            _logger.LogInformation("Login attempt for user {Username}. Expected: {ExpectedUsername}", 
+                request.Username, _authSettings.DefaultUsername);
+            
             // Simple authentication - check against configured username/password
             // In production, this should check against a user database
             if (request.Username == _authSettings.DefaultUsername && 
