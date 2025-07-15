@@ -17,16 +17,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]  # Temporarily disabled windows-latest due to git history issue
       fail-fast: false
 
     steps:
-    - name: Configure git
-      if: runner.os == 'Windows'
-      run: |
-        git config --global core.protectNTFS false
-      shell: cmd
-        
     - name: Checkout code
       uses: actions/checkout@v4
       with:
