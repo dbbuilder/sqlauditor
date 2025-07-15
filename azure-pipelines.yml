@@ -1,0 +1,151 @@
+# Azure DevOps Pipeline for SQL Analyzer
+# Deploys both API and Frontend
+
+trigger:
+  branches:
+    include:
+    - master
+    - main
+  paths:
+    exclude:
+    - README.md
+    - docs/*
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  buildConfiguration: 'Release'
+  apiProject: 'api/SqlAnalyzer.Api/SqlAnalyzer.Api.csproj'
+  frontendPath: 'frontend'
+  
+stages:
+- stage: BuildAPI
+  displayName: 'Build API'
+  jobs:
+  - job: BuildAPIJob
+    displayName: 'Build and Package API'
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET 8'
+      inputs:
+        packageType: 'sdk'
+        version: '8.x'
+        
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore NuGet packages'
+      inputs:
+        command: 'restore'
+        projects: '$(apiProject)'
+        
+    - task: DotNetCoreCLI@2
+      displayName: 'Build API'
+      inputs:
+        command: 'build'
+        projects: '$(apiProject)'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+        
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish API'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: '$(apiProject)'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/api --no-build'
+        
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish API Artifacts'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/api'
+        ArtifactName: 'api-drop'
+        publishLocation: 'Container'
+
+- stage: BuildFrontend
+  displayName: 'Build Frontend'
+  jobs:
+  - job: BuildFrontendJob
+    displayName: 'Build Vue.js Frontend'
+    steps:
+    - task: NodeTool@0
+      displayName: 'Use Node 18.x'
+      inputs:
+        versionSpec: '18.x'
+        
+    - task: Npm@1
+      displayName: 'Install dependencies'
+      inputs:
+        command: 'install'
+        workingDir: '$(frontendPath)'
+        
+    - task: Npm@1
+      displayName: 'Build frontend'
+      inputs:
+        command: 'custom'
+        customCommand: 'run build'
+        workingDir: '$(frontendPath)'
+      env:
+        VITE_API_URL: 'https://sqlanalyzer-api-win.azurewebsites.net'
+        VITE_ENABLE_MOCK_DATA: 'false'
+        
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Frontend Artifacts'
+      inputs:
+        PathtoPublish: '$(frontendPath)/dist'
+        ArtifactName: 'frontend-drop'
+        publishLocation: 'Container'
+
+- stage: DeployAPI
+  displayName: 'Deploy API to Azure'
+  dependsOn: BuildAPI
+  condition: succeeded()
+  jobs:
+  - deployment: DeployAPIJob
+    displayName: 'Deploy to Windows App Service'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            displayName: 'Download API artifacts'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'api-drop'
+              downloadPath: '$(System.ArtifactsDirectory)'
+              
+          - task: AzureWebApp@1
+            displayName: 'Deploy to Azure App Service'
+            inputs:
+              azureSubscription: 'SqlAnalyzer-ServiceConnection'
+              appType: 'webApp'
+              appName: 'sqlanalyzer-api-win'
+              package: '$(System.ArtifactsDirectory)/api-drop'
+              deploymentMethod: 'auto'
+
+- stage: DeployFrontend
+  displayName: 'Deploy Frontend to Azure'
+  dependsOn: BuildFrontend
+  condition: succeeded()
+  jobs:
+  - deployment: DeployFrontendJob
+    displayName: 'Deploy to Static Web Apps'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            displayName: 'Download Frontend artifacts'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'frontend-drop'
+              downloadPath: '$(System.ArtifactsDirectory)'
+              
+          - task: AzureStaticWebApp@0
+            displayName: 'Deploy to Azure Static Web Apps'
+            inputs:
+              app_location: '$(System.ArtifactsDirectory)/frontend-drop'
+              skip_app_build: true
+              azure_static_web_apps_api_token: $(AZURE_STATIC_WEB_APPS_API_TOKEN)
