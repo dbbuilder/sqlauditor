@@ -33,7 +33,7 @@ jobs:
         run: npm run build
         working-directory: frontend
         env:
-          VITE_API_URL: https://sqlanalyzer-api-v2.azurewebsites.net
+          VITE_API_URL: https://sqlanalyzer-api-win.azurewebsites.net
           VITE_ENABLE_MOCK_DATA: false
           
       - name: Deploy to Azure Static Web Apps
