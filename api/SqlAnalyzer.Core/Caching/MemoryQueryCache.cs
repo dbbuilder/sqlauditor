@@ -22,7 +22,7 @@ namespace SqlAnalyzer.Core.Caching
         private readonly ReaderWriterLockSlim _lock;
         private readonly Timer _cleanupTimer;
         private bool _disposed;
-        
+
         // Atomic counters for thread-safe operations
         private long _totalHits;
         private long _totalMisses;
@@ -35,9 +35,9 @@ namespace SqlAnalyzer.Core.Caching
             _metadata = new ConcurrentDictionary<string, CacheEntryMetadata>();
             _statistics = new CacheStatistics { CreatedAt = DateTime.UtcNow };
             _lock = new ReaderWriterLockSlim();
-            
+
             // Set up periodic cleanup
-            _cleanupTimer = new Timer(CleanupExpiredEntries, null, 
+            _cleanupTimer = new Timer(CleanupExpiredEntries, null,
                 TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
         }
 
@@ -54,12 +54,12 @@ namespace SqlAnalyzer.Core.Caching
                 {
                     Interlocked.Increment(ref _totalHits);
                     _statistics.TotalHits = _totalHits;
-                    
+
                     if (_metadata.TryGetValue(key, out var metadata))
                     {
                         metadata.HitCount++;
                         metadata.LastAccessedAt = DateTime.UtcNow;
-                        
+
                         // Handle sliding expiration
                         if (metadata.SlidingExpiration.HasValue)
                         {
@@ -73,7 +73,7 @@ namespace SqlAnalyzer.Core.Caching
 
                     var value = DeserializeValue<T>(item);
                     return Task.FromResult(CacheResult<T>.Hit(
-                        value, 
+                        value,
                         metadata?.CachedAt ?? DateTime.UtcNow,
                         metadata?.ExpiresAt,
                         metadata?.HitCount ?? 1));
@@ -93,7 +93,7 @@ namespace SqlAnalyzer.Core.Caching
         {
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Cache key cannot be null or empty", nameof(key));
-            
+
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
 
@@ -125,7 +125,7 @@ namespace SqlAnalyzer.Core.Caching
 
                 // Set priority
                 policy.Priority = ConvertPriority(options?.Priority ?? CachePriority.Normal);
-                
+
                 // Set callback
                 if (options?.EvictionCallback != null)
                 {
@@ -172,16 +172,16 @@ namespace SqlAnalyzer.Core.Caching
             {
                 // Get all keys before clearing
                 var keys = _metadata.Keys.ToList();
-                
+
                 // Clear cache
                 foreach (var key in keys)
                 {
                     _cache.Remove(key);
                 }
-                
+
                 _metadata.Clear();
                 _statistics.LastClearedAt = DateTime.UtcNow;
-                
+
                 _logger.LogInformation("Cache cleared. Removed {Count} entries", keys.Count);
                 return Task.CompletedTask;
             }
@@ -200,7 +200,7 @@ namespace SqlAnalyzer.Core.Caching
                 _statistics.CurrentMemoryUsage = _metadata.Values
                     .Where(m => m.Size.HasValue)
                     .Sum(m => m.Size!.Value);
-                
+
                 return new CacheStatistics
                 {
                     TotalHits = _statistics.TotalHits,
@@ -244,10 +244,10 @@ namespace SqlAnalyzer.Core.Caching
 
             // Not in cache, execute factory
             var value = await factory();
-            
+
             // Cache the result
             await SetAsync(key, value, options);
-            
+
             return value;
         }
 
@@ -290,11 +290,11 @@ namespace SqlAnalyzer.Core.Caching
             {
                 Interlocked.Increment(ref _totalEvictions);
                 _statistics.TotalEvictions = _totalEvictions;
-                
+
                 var reason = ConvertRemovedReason(args.RemovedReason);
                 metadata.EvictionCallback?.Invoke(reason);
-                
-                _logger.LogDebug("Cache entry removed. Key: {Key}, Reason: {Reason}", 
+
+                _logger.LogDebug("Cache entry removed. Key: {Key}, Reason: {Reason}",
                     args.CacheItem.Key, reason);
             }
         }
@@ -373,7 +373,7 @@ namespace SqlAnalyzer.Core.Caching
         public string GenerateKey(string query, params object[] parameters)
         {
             var baseKey = query.GetHashCode().ToString();
-            
+
             if (parameters != null && parameters.Length > 0)
             {
                 var paramHash = string.Join("_", parameters.Select(p => p?.GetHashCode() ?? 0));

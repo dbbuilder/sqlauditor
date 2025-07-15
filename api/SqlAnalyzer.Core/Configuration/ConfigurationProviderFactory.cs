@@ -15,23 +15,23 @@ namespace SqlAnalyzer.Core.Configuration
         /// <param name="options">Provider-specific options</param>
         /// <returns>The configuration provider</returns>
         public static ISecureConfigurationProvider CreateProvider(
-            ConfigurationProviderType providerType, 
+            ConfigurationProviderType providerType,
             Dictionary<string, string> options = null)
         {
             options ??= new Dictionary<string, string>();
 
             return providerType switch
             {
-                ConfigurationProviderType.EnvironmentVariables => 
+                ConfigurationProviderType.EnvironmentVariables =>
                     new EnvironmentVariableProvider(options.GetValueOrDefault("prefix")),
-                
-                ConfigurationProviderType.AzureKeyVault => 
-                    new AzureKeyVaultProvider(options.GetValueOrDefault("keyVaultUrl") 
+
+                ConfigurationProviderType.AzureKeyVault =>
+                    new AzureKeyVaultProvider(options.GetValueOrDefault("keyVaultUrl")
                         ?? throw new ArgumentException("keyVaultUrl is required for Azure Key Vault provider")),
-                
-                ConfigurationProviderType.Composite => 
+
+                ConfigurationProviderType.Composite =>
                     throw new NotImplementedException("Composite provider not yet implemented"),
-                
+
                 _ => throw new ArgumentException($"Unknown provider type: {providerType}")
             };
         }

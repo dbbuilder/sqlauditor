@@ -38,7 +38,7 @@ namespace SqlAnalyzer.Core.Connections
 
             // Validate connection string
             var validationResult = _connectionStringValidator.Validate(connectionString);
-            
+
             if (!validationResult.IsValid)
             {
                 var errorMessages = string.Join("; ", validationResult.Errors.Select(e => e.Message));
@@ -65,7 +65,7 @@ namespace SqlAnalyzer.Core.Connections
 
             // Validate connection string
             var validationResult = _connectionStringValidator.Validate(connectionString);
-            
+
             if (!validationResult.IsValid)
             {
                 var errorMessages = string.Join("; ", validationResult.Errors.Select(e => e.Message));
@@ -77,22 +77,22 @@ namespace SqlAnalyzer.Core.Connections
             ISqlAnalyzerConnection connection = databaseType switch
             {
                 DatabaseType.SqlServer => new SqlServerConnection(
-                    connectionString, 
+                    connectionString,
                     _serviceProvider.GetRequiredService<ILogger<SqlServerConnection>>()),
-                
+
                 DatabaseType.PostgreSql => new PostgreSqlConnection(
-                    connectionString, 
+                    connectionString,
                     _serviceProvider.GetRequiredService<ILogger<PostgreSqlConnection>>()),
-                
+
                 DatabaseType.MySql => new MySqlConnection(
-                    connectionString, 
+                    connectionString,
                     _serviceProvider.GetRequiredService<ILogger<MySqlConnection>>()),
-                
+
                 _ => throw new ArgumentException($"Unsupported database type: {databaseType}")
             };
 
             _connections.Add(connection);
-            _logger.LogDebug("Created {DatabaseType} connection for database: {DatabaseName}", 
+            _logger.LogDebug("Created {DatabaseType} connection for database: {DatabaseName}",
                 databaseType, connection.DatabaseName);
 
             return connection;

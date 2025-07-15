@@ -21,7 +21,7 @@ namespace SqlAnalyzer.Core.Analyzers
         public string SchemaFilter { get; set; }
         public string ObjectNamePattern { get; set; }
 
-        public TableAnalyzer(ISqlAnalyzerConnection connection, ILogger<TableAnalyzer> logger) 
+        public TableAnalyzer(ISqlAnalyzerConnection connection, ILogger<TableAnalyzer> logger)
             : base(connection, logger)
         {
         }
@@ -33,14 +33,14 @@ namespace SqlAnalyzer.Core.Analyzers
             try
             {
                 string query = GetTableQuery();
-                
+
                 // Add SchemaFilter to query if specified
                 if (!string.IsNullOrWhiteSpace(SchemaFilter))
                 {
-                    query = query.Replace("WHERE t.type = 'U' AND t.is_ms_shipped = 0", 
+                    query = query.Replace("WHERE t.type = 'U' AND t.is_ms_shipped = 0",
                                        "WHERE t.type = 'U' AND t.is_ms_shipped = 0 AND s.name = @SchemaFilter");
                 }
-                
+
                 var parameters = new Dictionary<string, object>();
                 if (!string.IsNullOrWhiteSpace(SchemaFilter))
                 {

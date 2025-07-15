@@ -18,7 +18,7 @@ namespace SqlAnalyzer.Core.Security
             "sa", "root", "administrator", "guest", "user", "test"
         };
 
-        private static readonly string[] ProductionIndicators = 
+        private static readonly string[] ProductionIndicators =
         {
             "prod", "production", "live", "prd"
         };
@@ -52,7 +52,7 @@ namespace SqlAnalyzer.Core.Security
 
             // Parse connection string
             var parsed = ParseConnectionString(connectionString);
-            
+
             // Detect database type
             result.DatabaseType = DetectDatabaseType(parsed);
 
@@ -82,7 +82,7 @@ namespace SqlAnalyzer.Core.Security
                 {
                     var key = keyValue[0].Trim();
                     var value = keyValue[1].Trim();
-                    
+
                     // Normalize common variations
                     key = NormalizeKey(key);
                     result[key] = value;
@@ -120,7 +120,7 @@ namespace SqlAnalyzer.Core.Security
             }
 
             // SQL Server indicators
-            if (parsed.ContainsKey("integratedsecurity") || 
+            if (parsed.ContainsKey("integratedsecurity") ||
                 parsed.ContainsKey("trustservercertificate") ||
                 parsed.ContainsKey("multipleactiveresultsets"))
             {
@@ -145,7 +145,7 @@ namespace SqlAnalyzer.Core.Security
             if (hasIntegratedSecurity)
             {
                 result.AuthenticationType = AuthenticationType.Windows;
-                
+
                 // Check for mixed authentication
                 if (parsed.ContainsKey("userid") || parsed.ContainsKey("password"))
                 {
@@ -154,7 +154,7 @@ namespace SqlAnalyzer.Core.Security
                         "Both Windows and SQL authentication specified",
                         "When using Integrated Security, User ID and Password should not be specified"));
                 }
-                
+
                 // Validate Windows Auth is appropriate for the database type
                 if (result.DatabaseType != DatabaseType.SqlServer && result.DatabaseType != DatabaseType.Unknown)
                 {
@@ -167,7 +167,7 @@ namespace SqlAnalyzer.Core.Security
             else
             {
                 result.AuthenticationType = AuthenticationType.SqlServer;
-                
+
                 var userId = parsed.GetValueOrDefault("userid");
                 var password = parsed.GetValueOrDefault("password");
 
@@ -218,7 +218,7 @@ namespace SqlAnalyzer.Core.Security
             }
 
             // Check for missing TrustServerCertificate in SQL Server
-            if (result.DatabaseType == DatabaseType.SqlServer && 
+            if (result.DatabaseType == DatabaseType.SqlServer &&
                 !parsed.ContainsKey("trustservercertificate"))
             {
                 // This is actually good for security, so no warning

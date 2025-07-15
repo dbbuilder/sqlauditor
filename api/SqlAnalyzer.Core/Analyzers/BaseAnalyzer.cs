@@ -32,11 +32,11 @@ namespace SqlAnalyzer.Core.Analyzers
 
         public virtual async Task<AnalysisResult> AnalyzeAsync()
         {
-            _logger.LogInformation("Starting {AnalyzerName} analysis for database: {DatabaseName}", 
+            _logger.LogInformation("Starting {AnalyzerName} analysis for database: {DatabaseName}",
                 Name, _connection.DatabaseName);
 
             var stopwatch = Stopwatch.StartNew();
-            
+
             _result = new AnalysisResult
             {
                 AnalyzerName = Name,
@@ -66,7 +66,7 @@ namespace SqlAnalyzer.Core.Analyzers
 
                 // Process findings
                 ProcessFindings();
-                
+
                 _result.Success = true;
             }
             catch (Exception ex)
@@ -79,9 +79,9 @@ namespace SqlAnalyzer.Core.Analyzers
             {
                 stopwatch.Stop();
                 _result.AnalysisEndTime = DateTime.UtcNow;
-                
+
                 _logger.LogInformation(
-                    "Completed {AnalyzerName} analysis in {Duration}ms. Found {FindingCount} issues", 
+                    "Completed {AnalyzerName} analysis in {Duration}ms. Found {FindingCount} issues",
                     Name, stopwatch.ElapsedMilliseconds, _findings.Count);
             }
 
@@ -113,7 +113,7 @@ namespace SqlAnalyzer.Core.Analyzers
         /// <summary>
         /// Adds a finding to the results
         /// </summary>
-        protected void AddFinding(Severity severity, string message, string recommendation, 
+        protected void AddFinding(Severity severity, string message, string recommendation,
             string category = null, string affectedObject = null, string objectType = null)
         {
             var finding = new Finding
@@ -129,14 +129,14 @@ namespace SqlAnalyzer.Core.Analyzers
             };
 
             _findings.Add(finding);
-            
+
             _logger.LogDebug("Added {Severity} finding: {Message}", severity, message);
         }
 
         /// <summary>
         /// Adds a finding with a remediation script
         /// </summary>
-        protected void AddFindingWithScript(Severity severity, string message, string recommendation, 
+        protected void AddFindingWithScript(Severity severity, string message, string recommendation,
             string remediationScript, string category = null, string affectedObject = null, string objectType = null)
         {
             var finding = new Finding
@@ -153,7 +153,7 @@ namespace SqlAnalyzer.Core.Analyzers
             };
 
             _findings.Add(finding);
-            
+
             _logger.LogDebug("Added {Severity} finding with script: {Message}", severity, message);
         }
 
@@ -163,7 +163,7 @@ namespace SqlAnalyzer.Core.Analyzers
         private void ProcessFindings()
         {
             _result.Findings = _findings;
-            
+
             foreach (var finding in _findings)
             {
                 switch (finding.Severity)

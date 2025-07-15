@@ -22,11 +22,11 @@ public class JwtService : IJwtService
     {
         _configuration = configuration;
         _logger = logger;
-        
+
         // First try to get JWT config from Jwt section
         var jwtKey = configuration["Jwt:Key"];
         var jwtExpirationHours = configuration.GetValue<int>("Jwt:ExpirationInHours", 24);
-        
+
         if (!string.IsNullOrEmpty(jwtKey))
         {
             _authSettings = new AuthSettings
@@ -39,11 +39,11 @@ public class JwtService : IJwtService
         {
             // Fall back to Authentication section
             _authSettings = configuration.GetSection("Authentication").Get<AuthSettings>() ?? new AuthSettings();
-            
+
             // Generate a default JWT secret if not configured
             if (string.IsNullOrEmpty(_authSettings.JwtSecret))
             {
-                    _authSettings.JwtSecret = GenerateDefaultJwtSecret();
+                _authSettings.JwtSecret = GenerateDefaultJwtSecret();
                 _logger.LogWarning("No JWT secret configured. Using generated secret. Configure 'Jwt:Key' or 'Authentication:JwtSecret' for production.");
             }
         }
@@ -53,7 +53,7 @@ public class JwtService : IJwtService
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_authSettings.JwtSecret);
-        
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.Name, user.Username),
@@ -66,7 +66,7 @@ public class JwtService : IJwtService
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddHours(_authSettings.JwtExpirationHours),
             SigningCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(key), 
+                new SymmetricSecurityKey(key),
                 SecurityAlgorithms.HmacSha256Signature)
         };
 

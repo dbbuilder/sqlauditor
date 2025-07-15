@@ -15,10 +15,10 @@ namespace SqlAnalyzer.Core.Connections
     public class SqlServerConnection : SqlAnalyzerConnectionBase
     {
         private readonly AsyncRetryPolicy _retryPolicy;
-        
+
         public override DatabaseType DatabaseType => DatabaseType.SqlServer;
 
-        public SqlServerConnection(string connectionString, ILogger<SqlServerConnection> logger) 
+        public SqlServerConnection(string connectionString, ILogger<SqlServerConnection> logger)
             : base(connectionString, logger)
         {
             // Configure Polly retry policy for transient failures
@@ -28,9 +28,10 @@ namespace SqlAnalyzer.Core.Connections
                     3,
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     onRetry: (exception, timeSpan, retryCount, context) =>
-                    {                        _logger.LogWarning(exception, 
-                            "Transient error occurred. Retry attempt {RetryCount} after {TimeSpan}ms", 
-                            retryCount, 
+                    {
+                        _logger.LogWarning(exception,
+                            "Transient error occurred. Retry attempt {RetryCount} after {TimeSpan}ms",
+                            retryCount,
                             timeSpan.TotalMilliseconds);
                     });
         }
@@ -42,8 +43,8 @@ namespace SqlAnalyzer.Core.Connections
                 var builder = new SqlConnectionStringBuilder(ConnectionString);
                 DatabaseName = builder.InitialCatalog;
                 ServerName = builder.DataSource;
-                
-                _logger.LogDebug("Parsed connection string - Server: {Server}, Database: {Database}", 
+
+                _logger.LogDebug("Parsed connection string - Server: {Server}, Database: {Database}",
                     ServerName, DatabaseName);
             }
             catch (Exception ex)
@@ -62,13 +63,13 @@ namespace SqlAnalyzer.Core.Connections
             try
             {
                 _logger.LogInformation("Testing connection to SQL Server database: {DatabaseName}", DatabaseName);
-                
+
                 using (var connection = new SqlConnection(ConnectionString))
                 {
                     await _retryPolicy.ExecuteAsync(async () =>
                     {
                         await connection.OpenAsync();
-                        
+
                         using (var command = connection.CreateCommand())
                         {
                             command.CommandText = "SELECT 1";
@@ -76,7 +77,7 @@ namespace SqlAnalyzer.Core.Connections
                         }
                     });
                 }
-                
+
                 _logger.LogInformation("Successfully connected to SQL Server database: {DatabaseName}", DatabaseName);
                 return true;
             }
@@ -91,7 +92,7 @@ namespace SqlAnalyzer.Core.Connections
             try
             {
                 _logger.LogDebug("Executing query on database: {DatabaseName}", DatabaseName);
-                
+
                 if (_connection.State != ConnectionState.Open)
                 {
                     await OpenAsync();
@@ -105,7 +106,7 @@ namespace SqlAnalyzer.Core.Connections
                         {
                             var dataTable = new DataTable();
                             await Task.Run(() => adapter.Fill(dataTable));
-                            
+
                             _logger.LogDebug("Query returned {RowCount} rows", dataTable.Rows.Count);
                             return dataTable;
                         }
@@ -122,9 +123,9 @@ namespace SqlAnalyzer.Core.Connections
         {
             try
             {
-                _logger.LogDebug("Executing stored procedure: {ProcedureName} on database: {DatabaseName}", 
+                _logger.LogDebug("Executing stored procedure: {ProcedureName} on database: {DatabaseName}",
                     procedureName, DatabaseName);
-                
+
                 if (_connection.State != ConnectionState.Open)
                 {
                     await OpenAsync();
@@ -138,7 +139,7 @@ namespace SqlAnalyzer.Core.Connections
                         {
                             var dataTable = new DataTable();
                             await Task.Run(() => adapter.Fill(dataTable));
-                            
+
                             _logger.LogDebug("Stored procedure returned {RowCount} rows", dataTable.Rows.Count);
                             return dataTable;
                         }
@@ -156,7 +157,7 @@ namespace SqlAnalyzer.Core.Connections
             try
             {
                 _logger.LogDebug("Executing scalar query on database: {DatabaseName}", DatabaseName);
-                
+
                 if (_connection.State != ConnectionState.Open)
                 {
                     await OpenAsync();
@@ -182,7 +183,7 @@ namespace SqlAnalyzer.Core.Connections
             try
             {
                 _logger.LogDebug("Executing multi-result query on database: {DatabaseName}", DatabaseName);
-                
+
                 if (_connection.State != ConnectionState.Open)
                 {
                     await OpenAsync();
@@ -196,7 +197,7 @@ namespace SqlAnalyzer.Core.Connections
                         {
                             var dataSet = new DataSet();
                             await Task.Run(() => adapter.Fill(dataSet));
-                            
+
                             _logger.LogDebug("Query returned {TableCount} result sets", dataSet.Tables.Count);
                             return dataSet;
                         }
@@ -218,15 +219,15 @@ namespace SqlAnalyzer.Core.Connections
                         SERVERPROPERTY('ProductVersion') AS Version,
                         SERVERPROPERTY('ProductLevel') AS ProductLevel,
                         SERVERPROPERTY('Edition') AS Edition";
-                
+
                 var result = await ExecuteQueryAsync(query);
-                
+
                 if (result.Rows.Count > 0)
                 {
                     var row = result.Rows[0];
                     return $"SQL Server {row["Version"]} {row["ProductLevel"]} - {row["Edition"]}";
                 }
-                
+
                 return "Unknown";
             }
             catch (Exception ex)
@@ -244,14 +245,14 @@ namespace SqlAnalyzer.Core.Connections
                         SUM(CAST(size AS BIGINT)) * 8.0 / 1024 AS SizeMB
                     FROM sys.database_files
                     WHERE type_desc = 'ROWS'";
-                
+
                 var result = await ExecuteQueryAsync(query);
-                
+
                 if (result.Rows.Count > 0 && result.Rows[0]["SizeMB"] != DBNull.Value)
                 {
                     return Convert.ToDecimal(result.Rows[0]["SizeMB"]);
                 }
-                
+
                 return 0;
             }
             catch (Exception ex)
@@ -266,7 +267,7 @@ namespace SqlAnalyzer.Core.Connections
         private bool IsTransientError(SqlException ex)
         {
             // List of SQL Server error numbers that are considered transient
-            int[] transientErrors = { 
+            int[] transientErrors = {
                 49918, // Cannot process request. Not enough resources to process request
                 49919, // Cannot process create or update request. Too many create or update operations in progress
                 49920, // Cannot process request. Too many operations in progress

@@ -26,7 +26,7 @@ namespace SqlAnalyzer.Api.Controllers
             var assembly = Assembly.GetExecutingAssembly();
             var version = assembly.GetName().Version?.ToString() ?? "1.0.0.0";
             var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? version;
-            
+
             // Get build timestamp from environment variable (set during CI/CD)
             var buildTimestamp = Environment.GetEnvironmentVariable("BUILD_TIMESTAMP") ?? "Local Build";
             var commitSha = Environment.GetEnvironmentVariable("GITHUB_SHA") ?? "Unknown";
@@ -70,9 +70,9 @@ namespace SqlAnalyzer.Api.Controllers
         [HttpGet("health")]
         public IActionResult Health()
         {
-            return Ok(new 
-            { 
-                status = "Healthy", 
+            return Ok(new
+            {
+                status = "Healthy",
                 timestamp = DateTime.UtcNow,
                 version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0.0"
             });

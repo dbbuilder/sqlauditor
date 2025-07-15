@@ -12,19 +12,20 @@ namespace SqlAnalyzer.Api.Controllers
         [AllowAnonymous]
         public IActionResult Get()
         {
-            return Ok(new { 
-                status = "healthy", 
+            return Ok(new
+            {
+                status = "healthy",
                 timestamp = DateTime.UtcNow,
                 version = "1.0.0",
                 service = "sqlanalyzer-api-v2"
             });
         }
-        
+
         [HttpGet("error")]
         [AllowAnonymous]
         public IActionResult GetError()
         {
-            try 
+            try
             {
                 throw new Exception("Test error");
             }

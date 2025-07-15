@@ -180,11 +180,11 @@ namespace SqlAnalyzer.Api.Services
 
         private async Task AnalyzeTables(ISqlAnalyzerConnection connection, AnalysisResult result)
         {
-            var analyzer = new TableAnalyzer(connection, 
+            var analyzer = new TableAnalyzer(connection,
                 _serviceProvider.GetRequiredService<ILogger<TableAnalyzer>>());
-            
+
             var analysisResult = await analyzer.AnalyzeAsync();
-            
+
             // Convert analyzer findings to API findings
             foreach (var finding in analysisResult.Findings)
             {
@@ -297,7 +297,7 @@ namespace SqlAnalyzer.Api.Services
                 audit.Permissions.Add(permission);
 
                 // Check for elevated permissions
-                if (permission.PermissionName.Contains("CONTROL") || 
+                if (permission.PermissionName.Contains("CONTROL") ||
                     permission.PermissionName.Contains("ALTER"))
                 {
                     audit.HasElevatedPermissions = true;
@@ -321,7 +321,7 @@ namespace SqlAnalyzer.Api.Services
                     Description = $"Found {result.Performance.MissingIndexes.Count} missing indexes that could improve query performance",
                     Priority = "High",
                     EstimatedImpact = "20-50% query performance improvement",
-                    Actions = result.Performance.MissingIndexes.Select(i => 
+                    Actions = result.Performance.MissingIndexes.Select(i =>
                         $"Create index on {i.TableName} ({string.Join(", ", i.EqualityColumns)})").ToList()
                 });
             }
@@ -335,7 +335,7 @@ namespace SqlAnalyzer.Api.Services
                     Description = $"Found {result.Performance.FragmentedIndexes.Count} highly fragmented indexes",
                     Priority = "Medium",
                     EstimatedImpact = "10-30% I/O performance improvement",
-                    Actions = result.Performance.FragmentedIndexes.Select(i => 
+                    Actions = result.Performance.FragmentedIndexes.Select(i =>
                         $"ALTER INDEX [{i.IndexName}] ON {i.TableName} REBUILD").ToList()
                 });
             }
@@ -416,9 +416,9 @@ namespace SqlAnalyzer.Api.Services
             return format.ToLower() switch
             {
                 "json" => System.Text.Encoding.UTF8.GetBytes(
-                    System.Text.Json.JsonSerializer.Serialize(job.Result, new System.Text.Json.JsonSerializerOptions 
-                    { 
-                        WriteIndented = true 
+                    System.Text.Json.JsonSerializer.Serialize(job.Result, new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true
                     })),
                 _ => null
             };

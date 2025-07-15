@@ -195,8 +195,8 @@ namespace SqlAnalyzer.Core.Caching
         /// <summary>
         /// Cache hit ratio
         /// </summary>
-        public double HitRatio => TotalHits + TotalMisses > 0 
-            ? (double)TotalHits / (TotalHits + TotalMisses) * 100 
+        public double HitRatio => TotalHits + TotalMisses > 0
+            ? (double)TotalHits / (TotalHits + TotalMisses) * 100
             : 0;
 
         /// <summary>

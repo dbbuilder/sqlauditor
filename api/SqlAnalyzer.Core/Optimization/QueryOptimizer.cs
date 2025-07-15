@@ -39,7 +39,7 @@ namespace SqlAnalyzer.Core.Optimization
             {
                 var table = match.Groups[1].Value;
                 var alias = match.Groups[2].Value;
-                
+
                 if (!string.IsNullOrWhiteSpace(alias))
                     return $"FROM {table} {alias} WITH (NOLOCK)";
                 else
@@ -52,7 +52,7 @@ namespace SqlAnalyzer.Core.Optimization
                 var table = match.Groups[1].Value;
                 var alias = match.Groups[2].Value;
                 var joinType = match.Value.Substring(0, match.Value.IndexOf(' '));
-                
+
                 if (!string.IsNullOrWhiteSpace(alias))
                     return $"{joinType} {table} {alias} WITH (NOLOCK)";
                 else
@@ -66,7 +66,7 @@ namespace SqlAnalyzer.Core.Optimization
         {
             if (pageSize <= 0 || pageSize > 10000)
                 throw new ArgumentException("Page size must be between 1 and 10000", nameof(pageSize));
-            
+
             if (offset < 0)
                 throw new ArgumentException("Offset cannot be negative", nameof(offset));
 
@@ -83,7 +83,7 @@ namespace SqlAnalyzer.Core.Optimization
         {
             // Check if ORDER BY exists
             var hasOrderBy = query.Contains("ORDER BY", StringComparison.OrdinalIgnoreCase);
-            
+
             if (!hasOrderBy)
             {
                 query += " ORDER BY 1"; // Default ordering by first column
@@ -210,7 +210,7 @@ namespace SqlAnalyzer.Core.Optimization
                 {
                     var column1 = match.Groups[1].Value;
                     var column2 = match.Groups[2].Value;
-                    
+
                     suggestions.Add($"-- Consider index on {tableName}.{column1} or {column2} for JOIN performance");
                 }
             }

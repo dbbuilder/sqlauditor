@@ -12,7 +12,7 @@ namespace SqlAnalyzer.Api.Extensions
     public static class ServiceExtensions
     {
         public static IServiceCollection ConfigureSqlAnalyzer(
-            this IServiceCollection services, 
+            this IServiceCollection services,
             IConfiguration configuration)
         {
             // Core services
@@ -20,7 +20,7 @@ namespace SqlAnalyzer.Api.Extensions
             services.AddSingleton<IConnectionStringValidator, ConnectionStringValidator>();
             services.AddSingleton<IQueryOptimizer, QueryOptimizer>();
             services.AddSingleton<IAdaptiveTimeoutCalculator, AdaptiveTimeoutCalculator>();
-            
+
             // Caching
             services.AddSingleton<IMemoryCache, MemoryCache>();
             services.AddSingleton<IQueryCache>(provider =>
@@ -29,7 +29,7 @@ namespace SqlAnalyzer.Api.Extensions
                 return new MemoryQueryCache(logger, "SqlAnalyzerCache");
             });
             services.AddSingleton<ICacheKeyGenerator, DefaultCacheKeyGenerator>();
-            
+
             // Resilience
             services.AddSingleton<ICircuitBreakerFactory, CircuitBreakerFactory>();
             services.AddSingleton<CircuitBreakerOptions>(provider =>
@@ -42,20 +42,20 @@ namespace SqlAnalyzer.Api.Extensions
                     EnableLogging = true
                 };
             });
-            
+
             // Connection pooling
             services.AddSingleton<IConnectionPoolManager, ConnectionPoolManager>();
-            
+
             // Configuration
             // Configuration provider is static, no need to register
             services.AddSingleton<ISecureConfigurationProvider, EnvironmentVariableProvider>();
-            
+
             // Analysis service
             services.AddSingleton<IAnalysisService, AnalysisService>();
-            
+
             // Background service
             services.AddSingleton<AnalysisBackgroundService>();
-            
+
             return services;
         }
     }

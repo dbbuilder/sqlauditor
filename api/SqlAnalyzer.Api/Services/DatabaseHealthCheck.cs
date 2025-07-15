@@ -27,9 +27,9 @@ namespace SqlAnalyzer.Api.Services
                 }
 
                 using var connection = _connectionFactory.CreateConnection(
-                    connectionString, 
+                    connectionString,
                     DatabaseType.SqlServer);
-                
+
                 // Test connection by executing a simple query
                 await connection.ExecuteScalarAsync("SELECT 1");
 

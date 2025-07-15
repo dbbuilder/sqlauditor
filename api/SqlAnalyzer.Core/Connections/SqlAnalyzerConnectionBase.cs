@@ -25,7 +25,7 @@ namespace SqlAnalyzer.Core.Connections
         {
             ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            
+
             // Parse connection string for database and server names
             ParseConnectionString();
             _connection = CreateConnection();
@@ -53,7 +53,7 @@ namespace SqlAnalyzer.Core.Connections
                 {
                     await Task.Run(() => _connection.Open());
                 }
-                
+
                 _logger.LogDebug("Successfully opened connection to database: {DatabaseName}", DatabaseName);
             }
             catch (Exception ex)
@@ -70,19 +70,19 @@ namespace SqlAnalyzer.Core.Connections
             try
             {
                 _logger.LogDebug("Closing connection to database: {DatabaseName}", DatabaseName);
-                
+
                 if (_currentTransaction != null)
                 {
                     _currentTransaction.Rollback();
                     _currentTransaction.Dispose();
                     _currentTransaction = null;
                 }
-                
+
                 if (_connection != null && _connection.State != ConnectionState.Closed)
                 {
                     await Task.Run(() => _connection.Close());
                 }
-                
+
                 _logger.LogDebug("Successfully closed connection to database: {DatabaseName}", DatabaseName);
             }
             catch (Exception ex)
@@ -103,10 +103,11 @@ namespace SqlAnalyzer.Core.Connections
             try
             {
                 _logger.LogDebug("Beginning transaction on database: {DatabaseName}", DatabaseName);
-                
+
                 _currentTransaction = await Task.Run(() => _connection.BeginTransaction());
                 return _currentTransaction;
-            }            catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to begin transaction on database: {DatabaseName}", DatabaseName);
                 throw;
@@ -146,7 +147,8 @@ namespace SqlAnalyzer.Core.Connections
                     {
                         _logger.LogError(ex, "Error disposing connection");
                     }
-                }                _disposed = true;
+                }
+                _disposed = true;
             }
         }
 

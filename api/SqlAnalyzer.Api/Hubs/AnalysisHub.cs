@@ -28,14 +28,14 @@ namespace SqlAnalyzer.Api.Hubs
         public async Task SubscribeToJob(string jobId)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, $"job-{jobId}");
-            _logger.LogInformation("Client {ConnectionId} subscribed to job {JobId}", 
+            _logger.LogInformation("Client {ConnectionId} subscribed to job {JobId}",
                 Context.ConnectionId, jobId);
         }
 
         public async Task UnsubscribeFromJob(string jobId)
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"job-{jobId}");
-            _logger.LogInformation("Client {ConnectionId} unsubscribed from job {JobId}", 
+            _logger.LogInformation("Client {ConnectionId} unsubscribed from job {JobId}",
                 Context.ConnectionId, jobId);
         }
     }

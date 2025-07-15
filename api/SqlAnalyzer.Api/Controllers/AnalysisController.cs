@@ -95,11 +95,11 @@ namespace SqlAnalyzer.Api.Controllers
             try
             {
                 using var connection = _connectionFactory.CreateConnection(
-                    request.ConnectionString, 
+                    request.ConnectionString,
                     request.DatabaseType);
 
                 await connection.OpenAsync();
-                
+
                 var dbName = await connection.ExecuteScalarAsync("SELECT DB_NAME()");
 
                 return Ok(new

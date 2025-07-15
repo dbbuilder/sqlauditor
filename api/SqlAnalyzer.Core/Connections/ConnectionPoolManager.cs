@@ -31,7 +31,7 @@ namespace SqlAnalyzer.Core.Connections
 
         public async Task<bool> WarmConnectionPoolAsync(string connectionString, DatabaseType databaseType, int poolSize = 10)
         {
-            _logger.LogInformation("Warming connection pool for {DatabaseType} with {PoolSize} connections", 
+            _logger.LogInformation("Warming connection pool for {DatabaseType} with {PoolSize} connections",
                 databaseType, poolSize);
 
             var tasks = new Task[poolSize];
@@ -47,7 +47,7 @@ namespace SqlAnalyzer.Core.Connections
                         {
                             using var connection = _connectionFactory.CreateConnection(connectionString, databaseType);
                             await connection.OpenAsync();
-                            
+
                             // Execute a simple query to ensure connection is fully established
                             var query = GetTestQuery(databaseType);
                             await connection.ExecuteScalarAsync(query);
@@ -61,10 +61,10 @@ namespace SqlAnalyzer.Core.Connections
                 }
 
                 await Task.WhenAll(tasks);
-                
-                _logger.LogInformation("Connection pool warmed successfully with {SuccessCount} connections", 
+
+                _logger.LogInformation("Connection pool warmed successfully with {SuccessCount} connections",
                     tasks.Count(t => !t.IsFaulted));
-                
+
                 return success;
             }
             catch (Exception ex)
@@ -77,7 +77,7 @@ namespace SqlAnalyzer.Core.Connections
         public async Task<ConnectionPoolStatistics> GetPoolStatisticsAsync(string connectionString, DatabaseType databaseType)
         {
             var key = GetPoolKey(connectionString, databaseType);
-            
+
             if (!_statistics.TryGetValue(key, out var stats))
             {
                 stats = new ConnectionPoolStatistics
@@ -91,7 +91,7 @@ namespace SqlAnalyzer.Core.Connections
 
             // Update statistics based on database type
             await UpdatePoolStatistics(stats, connectionString, databaseType);
-            
+
             return stats;
         }
 
@@ -104,10 +104,10 @@ namespace SqlAnalyzer.Core.Connections
                 // Note: Direct pool clearing is not available through ISqlAnalyzerConnection
                 // This would require provider-specific implementation
                 // For now, we'll just remove from our statistics and let the pool manage itself
-                
+
                 var key = GetPoolKey(connectionString, databaseType);
                 _statistics.TryRemove(key, out _);
-                
+
                 _logger.LogInformation("Connection pool statistics cleared");
             }
             catch (Exception ex)
@@ -136,7 +136,7 @@ namespace SqlAnalyzer.Core.Connections
                     if (settings.ConnectionLifetime > 0)
                         parts["Load Balance Timeout"] = settings.ConnectionLifetime.ToString();
                     break;
-                    
+
                 case DatabaseType.PostgreSql:
                     parts["MinPoolSize"] = settings.MinPoolSize.ToString();
                     parts["MaxPoolSize"] = settings.MaxPoolSize.ToString();
@@ -145,7 +145,7 @@ namespace SqlAnalyzer.Core.Connections
                     if (settings.ConnectionLifetime > 0)
                         parts["Connection Idle Lifetime"] = settings.ConnectionLifetime.ToString();
                     break;
-                    
+
                 case DatabaseType.MySql:
                     parts["MinimumPoolSize"] = settings.MinPoolSize.ToString();
                     parts["MaximumPoolSize"] = settings.MaxPoolSize.ToString();
@@ -174,7 +174,7 @@ namespace SqlAnalyzer.Core.Connections
             {
                 using var connection = _connectionFactory.CreateConnection(connectionString, databaseType);
                 await connection.OpenAsync();
-                
+
                 var query = GetTestQuery(databaseType);
                 await connection.ExecuteScalarAsync(query);
 
@@ -221,10 +221,10 @@ namespace SqlAnalyzer.Core.Connections
         {
             // Note: Getting actual pool statistics is database-specific and may require
             // database-specific queries or APIs. This is a simplified version.
-            
+
             stats.LastAccessed = DateTime.UtcNow;
             stats.TotalConnections = stats.ActiveConnections + stats.AvailableConnections;
-            
+
             // For demonstration, we'll attempt to get some basic info
             try
             {
@@ -252,7 +252,7 @@ namespace SqlAnalyzer.Core.Connections
             if (disposing)
             {
                 _logger.LogInformation("Disposing ConnectionPoolManager");
-                
+
                 // Clear all known pools
                 foreach (var stat in _statistics.Values)
                 {
@@ -265,7 +265,7 @@ namespace SqlAnalyzer.Core.Connections
                         _logger.LogError(ex, "Error clearing pool during disposal");
                     }
                 }
-                
+
                 _statistics.Clear();
             }
 

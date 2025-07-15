@@ -28,7 +28,7 @@ namespace SqlAnalyzer.Core.Configuration
 
             var envKey = $"{_prefix}{key}";
             var value = Environment.GetEnvironmentVariable(envKey);
-            
+
             // Also try without prefix if not found
             if (value == null && !string.IsNullOrEmpty(_prefix))
             {

@@ -16,13 +16,13 @@ namespace SqlAnalyzer.Core.Resilience
         private readonly CircuitBreakerOptions _options;
         private readonly IAsyncPolicy _policy;
         private readonly object _lock = new object();
-        
+
         private CircuitState _state = CircuitState.Closed;
         private int _failureCount;
         private DateTime? _lastOpenedTime;
         private Exception? _lastException;
         private readonly CircuitBreakerStatistics _statistics;
-        
+
         // Atomic counters for thread-safe operations
         private long _totalCalls;
         private long _successfulCalls;
@@ -63,7 +63,7 @@ namespace SqlAnalyzer.Core.Resilience
             {
                 Interlocked.Increment(ref _totalCalls);
                 _statistics.TotalCalls = _totalCalls;
-                
+
                 await _policy.ExecuteAsync(async () =>
                 {
                     await action();
@@ -91,7 +91,7 @@ namespace SqlAnalyzer.Core.Resilience
             {
                 Interlocked.Increment(ref _totalCalls);
                 _statistics.TotalCalls = _totalCalls;
-                
+
                 return await _policy.ExecuteAsync(async () =>
                 {
                     var result = await func();
@@ -122,7 +122,7 @@ namespace SqlAnalyzer.Core.Resilience
                 _lastException = null;
                 _statistics.LastResetTime = DateTime.UtcNow;
                 _statistics.ConsecutiveFailures = 0;
-                
+
                 if (_options.EnableLogging)
                 {
                     _logger.LogInformation("Circuit breaker manually reset");
@@ -172,7 +172,7 @@ namespace SqlAnalyzer.Core.Resilience
                 _state = CircuitState.Open;
                 _lastOpenedTime = DateTime.UtcNow;
                 _lastException = exception;
-                
+
                 if (_options.EnableLogging)
                 {
                     _logger.LogWarning(exception,
@@ -192,7 +192,7 @@ namespace SqlAnalyzer.Core.Resilience
                 _state = CircuitState.Closed;
                 _failureCount = 0;
                 _statistics.ConsecutiveFailures = 0;
-                
+
                 if (_options.EnableLogging)
                 {
                     _logger.LogInformation("Circuit breaker closed - service recovered");
@@ -208,7 +208,7 @@ namespace SqlAnalyzer.Core.Resilience
             {
                 var previousState = _state;
                 _state = CircuitState.HalfOpen;
-                
+
                 if (_options.EnableLogging)
                 {
                     _logger.LogInformation("Circuit breaker half-open - testing service recovery");
@@ -238,7 +238,7 @@ namespace SqlAnalyzer.Core.Resilience
                 _failureCount++;
                 _statistics.ConsecutiveFailures++;
                 _lastException = ex;
-                
+
                 if (_options.EnableLogging)
                 {
                     _logger.LogError(ex, "Circuit breaker recorded failure {FailureCount}/{Threshold}",

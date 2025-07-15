@@ -15,7 +15,7 @@ public class AuthController : ControllerBase
     private readonly AuthSettings _authSettings;
 
     public AuthController(
-        IJwtService jwtService, 
+        IJwtService jwtService,
         IConfiguration configuration,
         ILogger<AuthController> logger)
     {
@@ -24,7 +24,7 @@ public class AuthController : ControllerBase
         _logger = logger;
         // First try to get from Authentication section, then use defaults from Jwt if available
         _authSettings = configuration.GetSection("Authentication").Get<AuthSettings>() ?? new AuthSettings();
-        
+
         // If no authentication settings found, check if we have Jwt configuration
         if (string.IsNullOrEmpty(_authSettings.JwtSecret))
         {
@@ -42,16 +42,16 @@ public class AuthController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Login attempt for user {Username}. Expected: {ExpectedUsername}", 
+            _logger.LogInformation("Login attempt for user {Username}. Expected: {ExpectedUsername}",
                 request.Username, _authSettings.DefaultUsername);
-            
+
             // Simple authentication - check against configured username/password
             // In production, this should check against a user database
-            if (request.Username == _authSettings.DefaultUsername && 
+            if (request.Username == _authSettings.DefaultUsername &&
                 request.Password == _authSettings.DefaultPassword)
             {
-                var user = new UserInfo 
-                { 
+                var user = new UserInfo
+                {
                     Username = request.Username,
                     Role = "Admin"
                 };
@@ -85,9 +85,9 @@ public class AuthController : ControllerBase
     {
         // This endpoint verifies if the current token is valid
         var username = User.Identity?.Name;
-        return Ok(new 
-        { 
-            authenticated = true, 
+        return Ok(new
+        {
+            authenticated = true,
             username = username,
             role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
         });

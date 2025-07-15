@@ -15,10 +15,10 @@ namespace SqlAnalyzer.Core.Connections
     public class PostgreSqlConnection : SqlAnalyzerConnectionBase
     {
         private readonly AsyncRetryPolicy _retryPolicy;
-        
+
         public override DatabaseType DatabaseType => DatabaseType.PostgreSql;
 
-        public PostgreSqlConnection(string connectionString, ILogger<PostgreSqlConnection> logger) 
+        public PostgreSqlConnection(string connectionString, ILogger<PostgreSqlConnection> logger)
             : base(connectionString, logger)
         {
             // Configure Polly retry policy for transient failures
@@ -30,9 +30,9 @@ namespace SqlAnalyzer.Core.Connections
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     onRetry: (exception, timeSpan, retryCount, context) =>
                     {
-                        _logger.LogWarning(exception, 
-                            "Transient error occurred. Retry attempt {RetryCount} after {TimeSpan}ms", 
-                            retryCount, 
+                        _logger.LogWarning(exception,
+                            "Transient error occurred. Retry attempt {RetryCount} after {TimeSpan}ms",
+                            retryCount,
                             timeSpan.TotalMilliseconds);
                     });
         }
@@ -44,8 +44,8 @@ namespace SqlAnalyzer.Core.Connections
                 var builder = new NpgsqlConnectionStringBuilder(ConnectionString);
                 DatabaseName = builder.Database;
                 ServerName = builder.Host;
-                
-                _logger.LogDebug("Parsed connection string - Server: {Server}, Database: {Database}", 
+
+                _logger.LogDebug("Parsed connection string - Server: {Server}, Database: {Database}",
                     ServerName, DatabaseName);
             }
             catch (Exception ex)
@@ -65,13 +65,13 @@ namespace SqlAnalyzer.Core.Connections
             try
             {
                 _logger.LogInformation("Testing connection to PostgreSQL database: {DatabaseName}", DatabaseName);
-                
+
                 using (var connection = new NpgsqlConnection(ConnectionString))
                 {
                     await _retryPolicy.ExecuteAsync(async () =>
                     {
                         await connection.OpenAsync();
-                        
+
                         using (var command = connection.CreateCommand())
                         {
                             command.CommandText = "SELECT 1";
@@ -79,7 +79,7 @@ namespace SqlAnalyzer.Core.Connections
                         }
                     });
                 }
-                
+
                 _logger.LogInformation("Successfully connected to PostgreSQL database: {DatabaseName}", DatabaseName);
                 return true;
             }
@@ -95,7 +95,7 @@ namespace SqlAnalyzer.Core.Connections
             try
             {
                 _logger.LogDebug("Executing query on database: {DatabaseName}", DatabaseName);
-                
+
                 if (_connection.State != ConnectionState.Open)
                 {
                     await OpenAsync();
@@ -109,7 +109,7 @@ namespace SqlAnalyzer.Core.Connections
                         {
                             var dataTable = new DataTable();
                             dataTable.Load(reader);
-                            
+
                             _logger.LogDebug("Query returned {RowCount} rows", dataTable.Rows.Count);
                             return dataTable;
                         }
@@ -127,9 +127,9 @@ namespace SqlAnalyzer.Core.Connections
         {
             try
             {
-                _logger.LogDebug("Executing stored procedure: {ProcedureName} on database: {DatabaseName}", 
+                _logger.LogDebug("Executing stored procedure: {ProcedureName} on database: {DatabaseName}",
                     procedureName, DatabaseName);
-                
+
                 if (_connection.State != ConnectionState.Open)
                 {
                     await OpenAsync();
@@ -143,7 +143,7 @@ namespace SqlAnalyzer.Core.Connections
                         {
                             var dataTable = new DataTable();
                             dataTable.Load(reader);
-                            
+
                             _logger.LogDebug("Stored procedure returned {RowCount} rows", dataTable.Rows.Count);
                             return dataTable;
                         }
@@ -162,7 +162,7 @@ namespace SqlAnalyzer.Core.Connections
             try
             {
                 _logger.LogDebug("Executing scalar query on database: {DatabaseName}", DatabaseName);
-                
+
                 if (_connection.State != ConnectionState.Open)
                 {
                     await OpenAsync();
@@ -188,7 +188,7 @@ namespace SqlAnalyzer.Core.Connections
             try
             {
                 _logger.LogDebug("Executing multi-result query on database: {DatabaseName}", DatabaseName);
-                
+
                 if (_connection.State != ConnectionState.Open)
                 {
                     await OpenAsync();
@@ -202,7 +202,7 @@ namespace SqlAnalyzer.Core.Connections
                         {
                             var dataSet = new DataSet();
                             await Task.Run(() => adapter.Fill(dataSet));
-                            
+
                             _logger.LogDebug("Query returned {TableCount} result sets", dataSet.Tables.Count);
                             return dataSet;
                         }
@@ -221,14 +221,14 @@ namespace SqlAnalyzer.Core.Connections
             try
             {
                 var query = "SELECT version()";
-                
+
                 var result = await ExecuteScalarAsync(query);
-                
+
                 if (result != null)
                 {
                     return result.ToString();
                 }
-                
+
                 return "Unknown";
             }
             catch (Exception ex)
@@ -244,14 +244,14 @@ namespace SqlAnalyzer.Core.Connections
             {
                 var query = @"
                     SELECT pg_database_size(current_database()) / 1024.0 / 1024.0 AS size_mb";
-                
+
                 var result = await ExecuteScalarAsync(query);
-                
+
                 if (result != null && result != DBNull.Value)
                 {
                     return Convert.ToDecimal(result);
                 }
-                
+
                 return 0;
             }
             catch (Exception ex)
@@ -267,7 +267,7 @@ namespace SqlAnalyzer.Core.Connections
         private bool IsTransientError(NpgsqlException ex)
         {
             // PostgreSQL error codes that are considered transient
-            string[] transientErrorCodes = { 
+            string[] transientErrorCodes = {
                 "08000", // connection_exception
                 "08003", // connection_does_not_exist
                 "08006", // connection_failure

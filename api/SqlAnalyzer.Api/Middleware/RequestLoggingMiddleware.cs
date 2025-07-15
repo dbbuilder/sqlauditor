@@ -17,7 +17,7 @@ namespace SqlAnalyzer.Api.Middleware
         {
             var stopwatch = Stopwatch.StartNew();
             var requestId = Guid.NewGuid().ToString();
-            
+
             context.Items["RequestId"] = requestId;
 
             try
@@ -27,7 +27,7 @@ namespace SqlAnalyzer.Api.Middleware
             finally
             {
                 stopwatch.Stop();
-                
+
                 _logger.LogInformation(
                     "Request {RequestId} {Method} {Path} responded {StatusCode} in {Duration}ms",
                     requestId,

@@ -9,7 +9,7 @@ namespace SqlAnalyzer.Core.Configuration
     public class AzureKeyVaultProvider : ISecureConfigurationProvider
     {
         private readonly string _keyVaultUrl;
-        
+
         public string ProviderName => "AzureKeyVault";
 
         /// <summary>

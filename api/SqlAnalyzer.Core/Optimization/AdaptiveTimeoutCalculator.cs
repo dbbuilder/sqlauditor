@@ -75,13 +75,13 @@ namespace SqlAnalyzer.Core.Optimization
                 (key, list) =>
                 {
                     list.Add(record);
-                    
+
                     // Keep only recent history
                     if (list.Count > MaxHistorySize)
                     {
                         list.RemoveAt(0);
                     }
-                    
+
                     return list;
                 });
         }
@@ -101,7 +101,7 @@ namespace SqlAnalyzer.Core.Optimization
                     var times = similarExecutions.Select(e => e.ExecutionTimeSeconds).OrderBy(t => t).ToList();
                     var percentileIndex = (int)(times.Count * 0.95);
                     var percentileTime = times[Math.Min(percentileIndex, times.Count - 1)];
-                    
+
                     // Add 20% buffer
                     return (int)(percentileTime * 1.2);
                 }
