@@ -21,18 +21,26 @@ namespace SqlAnalyzer.Api.Services
     public class AnalysisService : IAnalysisService
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly IHubContext<AnalysisHub> _hubContext;
+        private readonly IHubContext<AnalysisHub>? _hubContext;
         private readonly ILogger<AnalysisService> _logger;
         private readonly ConcurrentDictionary<string, AnalysisJob> _jobs = new();
 
         public AnalysisService(
             IServiceProvider serviceProvider,
-            IHubContext<AnalysisHub> hubContext,
             ILogger<AnalysisService> logger)
         {
             _serviceProvider = serviceProvider;
-            _hubContext = hubContext;
             _logger = logger;
+            
+            // Try to get HubContext if SignalR is enabled
+            try
+            {
+                _hubContext = serviceProvider.GetService<IHubContext<AnalysisHub>>();
+            }
+            catch
+            {
+                _logger.LogInformation("SignalR is disabled, real-time updates will not be available");
+            }
         }
 
         public async Task<string> StartAnalysisAsync(AnalysisRequest request)
@@ -138,8 +146,11 @@ namespace SqlAnalyzer.Api.Services
                 job.Status.CompletedAt = DateTime.UtcNow;
             }
 
-            // Send real-time update via SignalR to job-specific group
-            await _hubContext.Clients.Group($"job-{job.Id}").SendAsync("AnalysisProgress", job.Status);
+            // Send real-time update via SignalR to job-specific group (if enabled)
+            if (_hubContext != null)
+            {
+                await _hubContext.Clients.Group($"job-{job.Id}").SendAsync("AnalysisProgress", job.Status);
+            }
         }
 
         private async Task<DatabaseInfo> GatherDatabaseInfo(ISqlAnalyzerConnection connection)

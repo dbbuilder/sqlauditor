@@ -148,17 +148,14 @@ try
     // Add Email service
     builder.Services.AddScoped<IEmailService, EmailService>();
 
-    // Add SignalR for real-time updates (if enabled)
+    // Add SignalR for real-time updates
     var signalRSettings = builder.Configuration.GetSection("SignalR").Get<SignalRSettings>() ?? new SignalRSettings();
-    if (signalRSettings.Enabled)
+    builder.Services.AddSignalR(options =>
     {
-        builder.Services.AddSignalR(options =>
-        {
-            options.EnableDetailedErrors = signalRSettings.EnableDetailedErrors;
-            options.KeepAliveInterval = TimeSpan.FromSeconds(signalRSettings.KeepAliveInterval);
-            options.ClientTimeoutInterval = TimeSpan.FromSeconds(signalRSettings.ClientTimeoutInterval);
-        });
-    }
+        options.EnableDetailedErrors = signalRSettings.EnableDetailedErrors;
+        options.KeepAliveInterval = TimeSpan.FromSeconds(signalRSettings.KeepAliveInterval);
+        options.ClientTimeoutInterval = TimeSpan.FromSeconds(signalRSettings.ClientTimeoutInterval);
+    });
 
     // Add response compression
     builder.Services.AddResponseCompression();
