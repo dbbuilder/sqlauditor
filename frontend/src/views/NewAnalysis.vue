@@ -157,32 +157,32 @@
 
           <div class="options-grid">
             <div class="field-checkbox">
-              <Checkbox v-model="form.options.includeIndexAnalysis" inputId="indexAnalysis" />
+              <Checkbox v-model="form.options.includeIndexAnalysis" :binary="true" inputId="indexAnalysis" />
               <label for="indexAnalysis">Index Analysis</label>
             </div>
             
             <div class="field-checkbox">
-              <Checkbox v-model="form.options.includeFragmentation" inputId="fragmentation" />
+              <Checkbox v-model="form.options.includeFragmentation" :binary="true" inputId="fragmentation" />
               <label for="fragmentation">Fragmentation Check</label>
             </div>
             
             <div class="field-checkbox">
-              <Checkbox v-model="form.options.includeStatistics" inputId="statistics" />
+              <Checkbox v-model="form.options.includeStatistics" :binary="true" inputId="statistics" />
               <label for="statistics">Statistics Analysis</label>
             </div>
             
             <div class="field-checkbox">
-              <Checkbox v-model="form.options.includeSecurityAudit" inputId="security" />
+              <Checkbox v-model="form.options.includeSecurityAudit" :binary="true" inputId="security" />
               <label for="security">Security Audit</label>
             </div>
             
             <div class="field-checkbox">
-              <Checkbox v-model="form.options.includeQueryPerformance" inputId="performance" />
+              <Checkbox v-model="form.options.includeQueryPerformance" :binary="true" inputId="performance" />
               <label for="performance">Query Performance</label>
             </div>
             
             <div class="field-checkbox">
-              <Checkbox v-model="form.options.includeDependencies" inputId="dependencies" />
+              <Checkbox v-model="form.options.includeDependencies" :binary="true" inputId="dependencies" />
               <label for="dependencies">Object Dependencies</label>
             </div>
           </div>

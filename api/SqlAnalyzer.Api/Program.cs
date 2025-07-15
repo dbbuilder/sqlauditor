@@ -188,7 +188,7 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
-    app.MapHub<AnalysisHub>("/hubs/analysis");
+    app.MapHub<AnalysisHub>("/hubs/analysis").RequireCors("VueApp");
     app.MapHealthChecks("/health");
 
     app.Run();
