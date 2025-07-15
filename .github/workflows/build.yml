@@ -21,14 +21,6 @@ jobs:
       fail-fast: false
 
     steps:
-    - name: Clean workspace
-      run: |
-        # Clean problematic directories on Windows
-        if [ "$RUNNER_OS" = "Windows" ]; then
-          rm -rf "api/test-publish?" 2>/dev/null || true
-          git config --global core.protectNTFS false 2>/dev/null || true
-        fi
-      
     - name: Checkout code
       uses: actions/checkout@v4
       with:
