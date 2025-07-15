@@ -28,8 +28,9 @@ export const useAnalysisStore = defineStore('analysis', () => {
         return
       }
       
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
       connection.value = new signalR.HubConnectionBuilder()
-        .withUrl(`${import.meta.env.VITE_API_URL}/hubs/analysis`, {
+        .withUrl(`${apiUrl}/hubs/analysis`, {
           accessTokenFactory: () => token
         })
         .withAutomaticReconnect()
@@ -53,8 +54,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   async function startAnalysis(request) {
     try {
-      const response = await api.post('/analysis/start', request)
-      const { jobId } = response.data
+      const response = await api.startAnalysis(request)
+      const { jobId } = response
       
       currentJob.value = jobId
       activeJobs.value.set(jobId, {
@@ -77,8 +78,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   async function getAnalysisResults(jobId) {
     try {
-      const response = await api.get(`/analysis/results/${jobId}`)
-      return response.data
+      const response = await api.getAnalysisResults(jobId)
+      return response
     } catch (error) {
       throw error
     }
@@ -86,7 +87,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   async function cancelAnalysis(jobId) {
     try {
-      await api.post(`/analysis/cancel/${jobId}`)
+      await api.cancelAnalysis(jobId)
       activeJobs.value.delete(jobId)
       if (currentJob.value === jobId) {
         currentJob.value = null
@@ -98,11 +99,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   async function testConnection(connectionString, databaseType) {
     try {
-      const response = await api.post('/analysis/test-connection', {
-        connectionString,
-        databaseType
-      })
-      return response.data
+      const response = await api.testConnection(connectionString, databaseType)
+      return response
     } catch (error) {
       throw error
     }
@@ -110,10 +108,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   async function getAnalysisHistory(page = 1, pageSize = 10) {
     try {
-      const response = await api.get('/analysis/history', {
-        params: { page, pageSize }
-      })
-      return response.data
+      const response = await api.getAnalysisHistory(page, pageSize)
+      return response
     } catch (error) {
       throw error
     }
@@ -121,13 +117,10 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   async function exportResults(jobId, format = 'pdf') {
     try {
-      const response = await api.get(`/analysis/export/${jobId}`, {
-        params: { format },
-        responseType: 'blob'
-      })
+      const blob = await api.exportResults(jobId, format)
       
       // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const url = window.URL.createObjectURL(new Blob([blob]))
       const link = document.createElement('a')
       link.href = url
       link.setAttribute('download', `analysis-${jobId}.${format}`)
