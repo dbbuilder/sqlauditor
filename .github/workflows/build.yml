@@ -14,11 +14,7 @@ env:
 
 jobs:
   build-and-test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]  # Temporarily disabled windows-latest due to git history issue
-      fail-fast: false
+    runs-on: ubuntu-latest  # Using Ubuntu for CI/CD efficiency - deployment targets Windows
 
     steps:
     - name: Checkout code
@@ -36,9 +32,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        key: Linux-nuget-${{ hashFiles('**/*.csproj') }}
         restore-keys: |
-          ${{ runner.os }}-nuget-
+          Linux-nuget-
 
     - name: Restore dependencies
       run: dotnet restore
@@ -58,7 +54,7 @@ jobs:
       working-directory: api
 
     - name: Generate coverage report
-      if: matrix.os == 'ubuntu-latest'
+      # Always runs on Ubuntu
       run: |
         if [ -d "coverage" ]; then
           dotnet tool install --global dotnet-reportgenerator-globaltool || true
@@ -69,7 +65,7 @@ jobs:
       working-directory: api
 
     - name: Upload coverage to Codecov
-      if: matrix.os == 'ubuntu-latest'
+      # Always runs on Ubuntu
       uses: codecov/codecov-action@v4
       with:
         directory: ./api/coverage
@@ -79,7 +75,7 @@ jobs:
         fail_ci_if_error: false
 
     - name: Upload coverage reports
-      if: matrix.os == 'ubuntu-latest'
+      # Always runs on Ubuntu
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
