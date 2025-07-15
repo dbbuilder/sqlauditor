@@ -138,8 +138,8 @@ namespace SqlAnalyzer.Api.Services
                 job.Status.CompletedAt = DateTime.UtcNow;
             }
 
-            // Send real-time update via SignalR
-            await _hubContext.Clients.All.SendAsync("AnalysisProgress", job.Status);
+            // Send real-time update via SignalR to job-specific group
+            await _hubContext.Clients.Group($"job-{job.Id}").SendAsync("AnalysisProgress", job.Status);
         }
 
         private async Task<DatabaseInfo> GatherDatabaseInfo(ISqlAnalyzerConnection connection)

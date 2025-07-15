@@ -145,11 +145,20 @@ try
     // Add JWT service
     builder.Services.AddScoped<IJwtService, JwtService>();
 
-    // Add SignalR for real-time updates
-    builder.Services.AddSignalR(options =>
+    // Add Email service
+    builder.Services.AddScoped<IEmailService, EmailService>();
+
+    // Add SignalR for real-time updates (if enabled)
+    var signalRSettings = builder.Configuration.GetSection("SignalR").Get<SignalRSettings>() ?? new SignalRSettings();
+    if (signalRSettings.Enabled)
     {
-        options.EnableDetailedErrors = true;
-    });
+        builder.Services.AddSignalR(options =>
+        {
+            options.EnableDetailedErrors = signalRSettings.EnableDetailedErrors;
+            options.KeepAliveInterval = TimeSpan.FromSeconds(signalRSettings.KeepAliveInterval);
+            options.ClientTimeoutInterval = TimeSpan.FromSeconds(signalRSettings.ClientTimeoutInterval);
+        });
+    }
 
     // Add response compression
     builder.Services.AddResponseCompression();
@@ -202,7 +211,13 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
-    app.MapHub<AnalysisHub>("/hubs/analysis").RequireCors("VueApp");
+    
+    // Map SignalR hub only if enabled
+    if (signalRSettings.Enabled)
+    {
+        app.MapHub<AnalysisHub>("/hubs/analysis").RequireCors("VueApp");
+    }
+    
     app.MapHealthChecks("/health");
 
     app.Run();
