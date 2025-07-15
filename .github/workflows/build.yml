@@ -23,9 +23,12 @@ jobs:
     steps:
     - name: Clean workspace
       run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          if exist api\test-publish? rmdir /s /q "api\test-publish?"
-          git config --global core.protectNTFS false
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          # Use Windows-style paths with forward slashes
+          if [[ -d "api/test-publish?" ]]; then
+            rm -rf "api/test-publish?" || true
+          fi
+          git config --global core.protectNTFS false || true
         fi
       shell: bash
       
