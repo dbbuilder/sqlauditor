@@ -47,7 +47,7 @@
       </form>
       
       <div class="login-footer">
-        <small>Default credentials: admin / SqlAnalyzer2024!</small>
+        <small>Default credentials: admin / AnalyzeThis!!</small>
       </div>
     </div>
   </div>
