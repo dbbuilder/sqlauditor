@@ -45,10 +45,6 @@
           class="w-full"
         />
       </form>
-      
-      <div class="login-footer">
-        <small>Default credentials: admin / AnalyzeThis!!</small>
-      </div>
     </div>
   </div>
 </template>
@@ -185,11 +181,5 @@ const handleLogin = async () => {
   :deep(.p-message) {
     margin-bottom: 1rem;
   }
-}
-
-.login-footer {
-  margin-top: 1.5rem;
-  text-align: center;
-  color: #666;
 }
 </style>
