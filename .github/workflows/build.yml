@@ -23,14 +23,11 @@ jobs:
     steps:
     - name: Clean workspace
       run: |
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          # Use Windows-style paths with forward slashes
-          if [[ -d "api/test-publish?" ]]; then
-            rm -rf "api/test-publish?" || true
-          fi
-          git config --global core.protectNTFS false || true
+        # Clean problematic directories on Windows
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          rm -rf "api/test-publish?" 2>/dev/null || true
+          git config --global core.protectNTFS false 2>/dev/null || true
         fi
-      shell: bash
       
     - name: Checkout code
       uses: actions/checkout@v4
@@ -61,25 +58,23 @@ jobs:
 
     - name: Test with coverage
       run: |
-        if compgen -G "*Test*.csproj" > /dev/null || compgen -G "*Tests.csproj" > /dev/null; then
+        if ls *Test*.csproj 2>/dev/null || ls *Tests.csproj 2>/dev/null; then
           dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
         else
           echo "No test projects found, skipping tests"
         fi
       working-directory: api
-      shell: bash
 
     - name: Generate coverage report
       if: matrix.os == 'ubuntu-latest'
       run: |
-        if [ -d "coverage" ] && find coverage -name "*.cobertura.xml" -print -quit | grep -q .; then
-          dotnet tool install --global dotnet-reportgenerator-globaltool
-          reportgenerator -reports:coverage/**/coverage.cobertura.xml -targetdir:coverage/report -reporttypes:Html,Cobertura
+        if [ -d "coverage" ]; then
+          dotnet tool install --global dotnet-reportgenerator-globaltool || true
+          reportgenerator -reports:coverage/**/coverage.cobertura.xml -targetdir:coverage/report -reporttypes:Html,Cobertura || echo "No coverage files to process"
         else
-          echo "No coverage files found, skipping report generation"
+          echo "No coverage directory found, skipping report generation"
         fi
       working-directory: api
-      shell: bash
 
     - name: Upload coverage to Codecov
       if: matrix.os == 'ubuntu-latest'
