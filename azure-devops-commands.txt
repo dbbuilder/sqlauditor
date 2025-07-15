@@ -1,0 +1,43 @@
+# Azure DevOps Setup Commands for SQL Analyzer
+# Run these commands after setting up your PAT token
+
+# 1. First, create a Personal Access Token (PAT) in Azure DevOps:
+#    - Go to: https://dev.azure.com/sqlanalyzer/_usersSettings/tokens
+#    - Create new token with Full access scope
+#    - Copy the token
+
+# 2. Login to Azure DevOps CLI (will prompt for PAT):
+az devops login --organization https://dev.azure.com/sqlanalyzer
+
+# 3. Create the project:
+az devops project create --name SqlAnalyzer --description "SQL Analyzer - Database Analysis Tool" --org https://dev.azure.com/sqlanalyzer
+
+# 4. Set defaults:
+az devops configure --defaults organization=https://dev.azure.com/sqlanalyzer project=SqlAnalyzer
+
+# 5. Get the Static Web App token:
+az staticwebapp secrets list --name sqlanalyzer-frontend --resource-group rg-sqlanalyzer --query "properties.apiKey" -o tsv
+
+# 6. Create pipeline using the web interface:
+#    Direct URL: https://dev.azure.com/sqlanalyzer/SqlAnalyzer/_build/create?definitionPath=%2F&path=%2F&repository=dbbuilder%2Fsqlauditor&type=github
+
+# Manual steps in Azure DevOps portal:
+# 
+# A. Create Service Connection:
+#    - Go to: https://dev.azure.com/sqlanalyzer/SqlAnalyzer/_settings/adminservices
+#    - New service connection > Azure Resource Manager > Service principal (automatic)
+#    - Select your subscription
+#    - Name it: SqlAnalyzer-ServiceConnection
+#
+# B. Create Variable Group:
+#    - Go to: https://dev.azure.com/sqlanalyzer/SqlAnalyzer/_library
+#    - Create group: SqlAnalyzer-Variables
+#    - Add variable: AZURE_STATIC_WEB_APPS_API_TOKEN = [token from step 5]
+#    - Mark as secret
+#
+# C. Import Pipeline:
+#    - Go to: https://dev.azure.com/sqlanalyzer/SqlAnalyzer/_build
+#    - New pipeline > GitHub > Authorize > Select dbbuilder/sqlauditor
+#    - Choose "Existing Azure Pipelines YAML file"
+#    - Branch: master, Path: /azure-pipelines.yml
+#    - Run the pipeline

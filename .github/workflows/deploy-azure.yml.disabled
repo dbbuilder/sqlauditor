@@ -1,0 +1,195 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: sqlanalyzer-api
+  AZURE_WEBAPP_PACKAGE_PATH: './src/SqlAnalyzer.Api/publish'
+  DOTNET_VERSION: '8.0.x'
+  AZURE_SUBSCRIPTION_ID: '7b2beff3-b38a-4516-a75f-3216725cc4e9'
+  AZURE_RESOURCE_GROUP: 'rg-sqlanalyzer'
+  AZURE_LOCATION: 'eastus'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore dependencies
+      run: dotnet restore
+      working-directory: api
+    
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+      working-directory: api
+    
+    - name: Test
+      run: echo "No test projects available, skipping tests"
+    
+    - name: Publish API
+      run: dotnet publish SqlAnalyzer.Api/SqlAnalyzer.Api.csproj -c Release -o ./publish
+      working-directory: api
+    
+    - name: Upload artifact for deployment
+      uses: actions/upload-artifact@v4
+      with:
+        name: api-app
+        path: api/publish
+
+  deploy-infrastructure:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    outputs:
+      webapp-url: ${{ steps.deploy-webapp.outputs.webapp-url }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Create Resource Group
+      run: |
+        az group create \
+          --name ${{ env.AZURE_RESOURCE_GROUP }} \
+          --location ${{ env.AZURE_LOCATION }}
+    
+    - name: Create App Service Plan
+      run: |
+        az appservice plan create \
+          --name asp-sqlanalyzer-linux \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --location ${{ env.AZURE_LOCATION }} \
+          --sku B1 \
+          --is-linux
+    
+    - name: Create Web App
+      run: |
+        az webapp create \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --plan asp-sqlanalyzer-linux \
+          --runtime "DOTNET|8.0"
+    
+    - name: Configure App Settings
+      run: |
+        az webapp config appsettings set \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --settings \
+            ASPNETCORE_ENVIRONMENT=Production \
+            SqlAnalyzer__EnableCaching=true \
+            SqlAnalyzer__DefaultTimeout=300 \
+            SqlAnalyzer__MaxConcurrentAnalyses=10 \
+            SqlAnalyzer__CircuitBreaker__FailureThreshold=5 \
+            SqlAnalyzer__CircuitBreaker__OpenDurationSeconds=30
+    
+    - name: Configure CORS
+      run: |
+        az webapp cors add \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --allowed-origins \
+            "https://sqlanalyzer.vercel.app" \
+            "https://sqlanalyzer-web.vercel.app" \
+            "http://localhost:5173" \
+            "http://localhost:3000"
+
+  deploy-api:
+    runs-on: ubuntu-latest
+    needs: deploy-infrastructure
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: api-app
+        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+    
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+    
+    - name: Verify deployment
+      run: |
+        echo "API deployed to: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        sleep 30
+        curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health || exit 1
+
+  deploy-web-vercel:
+    runs-on: ubuntu-latest
+    needs: deploy-api
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install Vercel CLI
+      run: npm install -g vercel
+    
+    - name: Build Web UI
+      run: |
+        npm install
+        npm run build
+      working-directory: frontend
+      env:
+        VITE_API_URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net
+        VITE_ENABLE_MOCK_DATA: false
+    
+    - name: Deploy to Vercel
+      run: vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
+      working-directory: frontend
+      env:
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: [deploy-api, deploy-web-vercel]
+    if: always()
+    
+    steps:
+    - name: Deployment Summary
+      run: |
+        echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### API Deployment" >> $GITHUB_STEP_SUMMARY
+        echo "- URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net" >> $GITHUB_STEP_SUMMARY
+        echo "- Health Check: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health" >> $GITHUB_STEP_SUMMARY
+        echo "- Swagger: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/swagger" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Web UI Deployment" >> $GITHUB_STEP_SUMMARY
+        echo "- URL: https://sqlanalyzer.vercel.app" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "1. Verify both deployments are working" >> $GITHUB_STEP_SUMMARY
+        echo "2. Test the integration between Web UI and API" >> $GITHUB_STEP_SUMMARY
+        echo "3. Configure custom domains if needed" >> $GITHUB_STEP_SUMMARY

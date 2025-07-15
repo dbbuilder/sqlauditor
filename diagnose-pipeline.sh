@@ -1,0 +1,30 @@
+#!/bin/bash
+# Diagnose Pipeline Issues
+
+echo "Pipeline Diagnostics"
+echo "==================="
+echo ""
+echo "View detailed logs at:"
+echo "https://dev.azure.com/dbbuilder-dev/SQLAnalyzer/_build/results?buildId=3"
+echo ""
+echo "Common failure reasons:"
+echo ""
+echo "1. Service Connection Authorization:"
+echo "   - Go to Project Settings > Service connections"
+echo "   - Find 'SqlAnalyzer-ServiceConnection'"
+echo "   - Click the three dots > Security"
+echo "   - Ensure 'Grant access to all pipelines' is checked"
+echo ""
+echo "2. GitHub Repository Access:"
+echo "   - The pipeline needs to checkout code from GitHub"
+echo "   - Check if GitHub service connection is authorized"
+echo ""
+echo "3. Azure Permissions:"
+echo "   - Service principal needs access to resource group"
+echo "   - Check if 'sqlanalyzer-api-win' app service exists"
+echo "   - Check if 'sqlanalyzer-web' static web app exists"
+echo ""
+echo "Quick Checks:"
+az webapp list --resource-group rg-sqlanalyzer --query "[].{name:name, state:state}" -o table
+echo ""
+az staticwebapp list --resource-group rg-sqlanalyzer --query "[].{name:name}" -o table

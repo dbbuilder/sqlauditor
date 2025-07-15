@@ -1,0 +1,16 @@
+{
+  "name": "SqlAnalyzer-CI-CD",
+  "description": "SQL Analyzer CI/CD Pipeline",
+  "path": "\\",
+  "type": "build",
+  "configuration": {
+    "type": "yaml",
+    "yamlFilename": "azure-pipelines.yml",
+    "repository": {
+      "type": "github",
+      "name": "dbbuilder/sqlauditor",
+      "url": "https://github.com/dbbuilder/sqlauditor.git",
+      "defaultBranch": "master"
+    }
+  }
+}
