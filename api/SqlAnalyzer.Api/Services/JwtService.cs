@@ -67,7 +67,9 @@ public class JwtService : IJwtService
             Expires = DateTime.UtcNow.AddHours(_authSettings.JwtExpirationHours),
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(key),
-                SecurityAlgorithms.HmacSha256Signature)
+                SecurityAlgorithms.HmacSha256Signature),
+            Issuer = _configuration["Jwt:Issuer"],
+            Audience = _configuration["Jwt:Audience"]
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -85,8 +87,10 @@ public class JwtService : IJwtService
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateIssuer = false,
-                ValidateAudience = false,
+                ValidateIssuer = !string.IsNullOrEmpty(_configuration["Jwt:Issuer"]),
+                ValidIssuer = _configuration["Jwt:Issuer"],
+                ValidateAudience = !string.IsNullOrEmpty(_configuration["Jwt:Audience"]),
+                ValidAudience = _configuration["Jwt:Audience"],
                 ClockSkew = TimeSpan.Zero
             };
 
