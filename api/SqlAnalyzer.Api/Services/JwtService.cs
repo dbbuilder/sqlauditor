@@ -22,13 +22,30 @@ public class JwtService : IJwtService
     {
         _configuration = configuration;
         _logger = logger;
-        _authSettings = configuration.GetSection("Authentication").Get<AuthSettings>() ?? new AuthSettings();
         
-        // Generate a default JWT secret if not configured
-        if (string.IsNullOrEmpty(_authSettings.JwtSecret))
+        // First try to get JWT config from Jwt section
+        var jwtKey = configuration["Jwt:Key"];
+        var jwtExpirationHours = configuration.GetValue<int>("Jwt:ExpirationInHours", 24);
+        
+        if (!string.IsNullOrEmpty(jwtKey))
         {
-            _authSettings.JwtSecret = GenerateDefaultJwtSecret();
-            _logger.LogWarning("No JWT secret configured. Using generated secret. Configure 'Authentication:JwtSecret' for production.");
+            _authSettings = new AuthSettings
+            {
+                JwtSecret = jwtKey,
+                JwtExpirationHours = jwtExpirationHours
+            };
+        }
+        else
+        {
+            // Fall back to Authentication section
+            _authSettings = configuration.GetSection("Authentication").Get<AuthSettings>() ?? new AuthSettings();
+            
+            // Generate a default JWT secret if not configured
+            if (string.IsNullOrEmpty(_authSettings.JwtSecret))
+            {
+                    _authSettings.JwtSecret = GenerateDefaultJwtSecret();
+                _logger.LogWarning("No JWT secret configured. Using generated secret. Configure 'Jwt:Key' or 'Authentication:JwtSecret' for production.");
+            }
         }
     }
 

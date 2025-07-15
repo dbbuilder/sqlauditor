@@ -66,8 +66,8 @@ try
                 "http://localhost:8080"   // Vue CLI default
             };
 
-            // Add production origins
-            var corsOrigins = builder.Configuration.GetSection("SqlAnalyzer:AllowedOrigins").Get<string[]>();
+            // Add production origins from Cors:AllowedOrigins
+            var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
             if (corsOrigins != null)
             {
                 allowedOrigins.AddRange(corsOrigins);
@@ -87,12 +87,21 @@ try
     });
 
     // Add authentication
-    var authSettings = builder.Configuration.GetSection("Authentication").Get<AuthSettings>() ?? new AuthSettings();
+    var jwtKey = builder.Configuration["Jwt:Key"];
+    var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+    var jwtAudience = builder.Configuration["Jwt:Audience"];
     
-    // Generate a default JWT secret if not configured
-    if (string.IsNullOrEmpty(authSettings.JwtSecret))
+    // Use JWT key if available, otherwise fall back to Authentication:JwtSecret
+    if (string.IsNullOrEmpty(jwtKey))
     {
-        authSettings.JwtSecret = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(64));
+        var authSettings = builder.Configuration.GetSection("Authentication").Get<AuthSettings>() ?? new AuthSettings();
+        jwtKey = authSettings.JwtSecret;
+        
+        if (string.IsNullOrEmpty(jwtKey))
+        {
+            jwtKey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(64));
+            Log.Warning("No JWT secret configured. Using generated secret. Configure 'Jwt:Key' or 'Authentication:JwtSecret' for production.");
+        }
     }
     
     builder.Services.AddAuthentication(options =>
@@ -105,9 +114,11 @@ try
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(authSettings.JwtSecret)),
-            ValidateIssuer = false,
-            ValidateAudience = false,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtKey)),
+            ValidateIssuer = !string.IsNullOrEmpty(jwtIssuer),
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = !string.IsNullOrEmpty(jwtAudience),
+            ValidAudience = jwtAudience,
             ClockSkew = TimeSpan.Zero
         };
 

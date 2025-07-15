@@ -6,8 +6,7 @@ using SqlAnalyzer.Api.Services;
 namespace SqlAnalyzer.Api.Controllers;
 
 [ApiController]
-[Route("api/v{version:apiVersion}/[controller]")]
-[ApiVersion("1.0")]
+[Route("api/v1/[controller]")]
 public class AuthController : ControllerBase
 {
     private readonly IJwtService _jwtService;
