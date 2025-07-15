@@ -409,6 +409,9 @@ async function startAnalysis() {
 
 // Load analysis types on mount
 loadAnalysisTypes()
+
+// Ensure form is properly initialized
+console.log('Form initialized with:', form)
 </script>
 
 <style lang="scss" scoped>
