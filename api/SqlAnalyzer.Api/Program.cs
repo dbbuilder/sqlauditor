@@ -143,8 +143,8 @@ try
     // Add response compression
     builder.Services.AddResponseCompression();
 
-    // Add API versioning
-    builder.Services.AddApiVersioning();
+    // Add API versioning (disabled for now due to issues)
+    // builder.Services.AddApiVersioning();
 
     // Add health checks
     builder.Services.AddHealthChecks()
