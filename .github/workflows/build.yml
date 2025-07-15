@@ -50,24 +50,28 @@ jobs:
 
     - name: Restore dependencies
       run: dotnet restore
+      working-directory: api
 
     - name: Build
       run: dotnet build --no-restore --configuration Release
+      working-directory: api
 
     - name: Test with coverage
       run: dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+      working-directory: api
 
     - name: Generate coverage report
       if: matrix.os == 'ubuntu-latest'
       run: |
         dotnet tool install --global dotnet-reportgenerator-globaltool
         reportgenerator -reports:coverage/**/coverage.cobertura.xml -targetdir:coverage/report -reporttypes:Html,Cobertura
+      working-directory: api
 
     - name: Upload coverage to Codecov
       if: matrix.os == 'ubuntu-latest'
       uses: codecov/codecov-action@v4
       with:
-        directory: ./coverage
+        directory: ./api/coverage
         files: '**/coverage.cobertura.xml'
         flags: unittests
         name: codecov-umbrella
@@ -78,7 +82,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
-        path: coverage/report/
+        path: api/coverage/report/
 
   code-quality:
     runs-on: ubuntu-latest
@@ -98,9 +102,11 @@ jobs:
 
     - name: Check formatting
       run: dotnet format --verify-no-changes --verbosity diagnostic
+      working-directory: api
 
     - name: Run code analysis
       run: dotnet build /p:EnableNETAnalyzers=true /p:AnalysisMode=AllEnabledByDefault /p:EnforceCodeStyleInBuild=true
+      working-directory: api
 
   publish:
     runs-on: ubuntu-latest
@@ -118,12 +124,11 @@ jobs:
 
     - name: Create release packages
       run: |
-        dotnet publish src/SqlAnalyzer.CLI/SqlAnalyzer.CLI.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o ./publish/win-x64
-        dotnet publish src/SqlAnalyzer.CLI/SqlAnalyzer.CLI.csproj -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -o ./publish/linux-x64
-        dotnet publish src/SqlAnalyzer.CLI/SqlAnalyzer.CLI.csproj -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -o ./publish/osx-x64
+        dotnet publish SqlAnalyzer.Api/SqlAnalyzer.Api.csproj -c Release -o ./publish/api
+      working-directory: api
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: release-packages
-        path: ./publish/
+        path: api/publish/
