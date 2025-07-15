@@ -66,7 +66,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
         jobId,
         status: 'Queued',
         progressPercentage: 0,
-        currentStep: 'Initializing'
+        currentStep: 'Initializing',
+        startedAt: new Date().toISOString()
       })
 
       // Subscribe to job updates

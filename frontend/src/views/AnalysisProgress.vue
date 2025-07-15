@@ -150,7 +150,9 @@ function getStatusSeverity(status) {
 }
 
 function formatDate(dateString) {
-  return new Date(dateString).toLocaleString()
+  if (!dateString) return 'Not available'
+  const date = new Date(dateString)
+  return isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleString()
 }
 
 function formatDuration(duration) {
