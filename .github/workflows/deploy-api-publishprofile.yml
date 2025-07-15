@@ -1,26 +1,22 @@
-name: Deploy API to Azure App Service
+name: Deploy API with Publish Profile
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
       - master
     paths:
       - 'api/**'
-      - '.github/workflows/deploy-api.yml'
-  workflow_dispatch:
+      - '.github/workflows/deploy-api-publishprofile.yml'
 
 jobs:
-  build_and_deploy:
-    runs-on: ubuntu-latest
-    name: Build and Deploy API
+  deploy:
+    runs-on: windows-latest
+    name: Deploy API using Publish Profile
+    
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
       
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -39,8 +35,9 @@ jobs:
         run: dotnet publish SqlAnalyzer.Api/SqlAnalyzer.Api.csproj -c Release -o ./publish
         working-directory: api
         
-      - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v3
+      - name: Deploy to Azure WebApp
+        uses: azure/webapps-deploy@v2
         with:
           app-name: sqlanalyzer-api-win
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: api/publish
