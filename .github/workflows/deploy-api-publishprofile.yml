@@ -2,13 +2,14 @@ name: Deploy API with Publish Profile
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - 'api/**'
-      - '.github/workflows/deploy-api-publishprofile.yml'
+  # Disabled automatic trigger - use deploy-api.yml instead
+  # push:
+  #   branches:
+  #     - main
+  #     - master
+  #   paths:
+  #     - 'api/**'
+  #     - '.github/workflows/deploy-api-publishprofile.yml'
 
 jobs:
   deploy:
