@@ -25,13 +25,13 @@ public class EmailService : IEmailService
 
         // Check environment variable first, then fall back to config
         var apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY") ?? _emailSettings.SendGridApiKey;
-        
+
         // Override settings from environment if available
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("EMAIL_ENABLED")))
         {
             _emailSettings.Enabled = bool.Parse(Environment.GetEnvironmentVariable("EMAIL_ENABLED")!);
         }
-        
+
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("EMAIL_FROM")))
         {
             _emailSettings.FromEmail = Environment.GetEnvironmentVariable("EMAIL_FROM")!;
@@ -67,17 +67,17 @@ public class EmailService : IEmailService
             };
 
             msg.AddTo(new EmailAddress(toEmail));
-            
+
             // Add report as attachment
-            var reportJson = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions 
-            { 
-                WriteIndented = true 
+            var reportJson = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true
             });
             var reportBytes = Encoding.UTF8.GetBytes(reportJson);
             msg.AddAttachment($"analysis-report-{jobId}.json", Convert.ToBase64String(reportBytes));
 
             var response = await _sendGridClient.SendEmailAsync(msg);
-            
+
             if (response.StatusCode == System.Net.HttpStatusCode.Accepted)
             {
                 _logger.LogInformation("Analysis report email sent successfully to {Email} for job {JobId}", toEmail, jobId);
@@ -111,7 +111,7 @@ public class EmailService : IEmailService
             };
 
             msg.AddTo(new EmailAddress(toEmail));
-            
+
             await _sendGridClient.SendEmailAsync(msg);
         }
         catch (Exception ex)
@@ -136,7 +136,7 @@ public class EmailService : IEmailService
         sb.AppendLine($"- Warning: {result.Summary.WarningFindings}");
         sb.AppendLine($"- Info: {result.Summary.InfoFindings}");
         sb.AppendLine();
-        
+
         if (result.Findings.Any())
         {
             sb.AppendLine("Top Findings:");

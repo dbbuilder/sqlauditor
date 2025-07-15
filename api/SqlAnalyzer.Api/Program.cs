@@ -208,13 +208,13 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
-    
+
     // Map SignalR hub only if enabled
     if (signalRSettings.Enabled)
     {
         app.MapHub<AnalysisHub>("/hubs/analysis").RequireCors("VueApp");
     }
-    
+
     app.MapHealthChecks("/health");
 
     app.Run();

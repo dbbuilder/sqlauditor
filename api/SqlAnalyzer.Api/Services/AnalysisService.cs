@@ -31,7 +31,7 @@ namespace SqlAnalyzer.Api.Services
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
-            
+
             // Try to get HubContext if SignalR is enabled
             try
             {
