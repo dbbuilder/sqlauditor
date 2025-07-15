@@ -19,6 +19,10 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   // Actions
   async function initializeSignalR() {
+    // Temporarily disable SignalR due to CORS issues
+    console.log('SignalR temporarily disabled')
+    return
+    
     try {
       // Get the auth token for SignalR
       const token = localStorage.getItem('token')

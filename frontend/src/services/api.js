@@ -50,7 +50,24 @@ class ApiService {
   // Analysis endpoints
   async startAnalysis(request) {
     if (USE_MOCK) return mockApi.startAnalysis(request)
-    const response = await apiClient.post('/analysis/start', request)
+    
+    // Transform request to match API expectations
+    const apiRequest = {
+      ConnectionString: request.connectionString,
+      DatabaseType: request.databaseType,
+      AnalysisType: request.analysisType,
+      Options: {
+        IncludeIndexAnalysis: request.options.includeIndexAnalysis,
+        IncludeFragmentation: request.options.includeFragmentation,
+        IncludeStatistics: request.options.includeStatistics,
+        IncludeSecurityAudit: request.options.includeSecurityAudit,
+        IncludeQueryPerformance: request.options.includeQueryPerformance,
+        IncludeDependencies: request.options.includeDependencies,
+        TimeoutMinutes: request.options.timeoutMinutes
+      }
+    }
+    
+    const response = await apiClient.post('/analysis/start', apiRequest)
     return response.data
   }
 
