@@ -14,6 +14,12 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
+# Publish directories
+**/publish/
+**/test-publish/
+**/win-publish/
+**/test-publish?/
+
 # Visual Studio cache/options
 .vs/
 .vscode/
