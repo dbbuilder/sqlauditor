@@ -204,7 +204,7 @@
             icon="pi pi-play"
             @click="startAnalysis"
             :loading="starting"
-            :disabled="!form.connectionString || !form.databaseType || !form.analysisType"
+            :disabled="!form.connectionString || form.databaseType === null || form.databaseType === undefined || !form.analysisType"
           />
         </div>
       </template>
