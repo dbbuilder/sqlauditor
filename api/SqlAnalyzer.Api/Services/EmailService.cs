@@ -1,13 +1,14 @@
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using SqlAnalyzer.Api.Models;
+using SqlAnalyzer.Core.Models;
 using System.Text;
 
 namespace SqlAnalyzer.Api.Services;
 
 public interface IEmailService
 {
-    Task SendAnalysisReportAsync(string toEmail, string jobId, AnalysisResult result);
+    Task SendAnalysisReportAsync(string toEmail, string jobId, Core.Models.AnalysisResult result);
     Task SendAnalysisFailureNotificationAsync(string toEmail, string jobId, string errorMessage);
 }
 
@@ -47,7 +48,7 @@ public class EmailService : IEmailService
         }
     }
 
-    public async Task SendAnalysisReportAsync(string toEmail, string jobId, AnalysisResult result)
+    public async Task SendAnalysisReportAsync(string toEmail, string jobId, Core.Models.AnalysisResult result)
     {
         if (!_emailSettings.Enabled || _sendGridClient == null)
         {
@@ -60,7 +61,7 @@ public class EmailService : IEmailService
             var msg = new SendGridMessage
             {
                 From = new EmailAddress(_emailSettings.FromEmail, _emailSettings.FromName),
-                Subject = $"SQL Analysis Report - {result.DatabaseName} - {result.CompletedAt:yyyy-MM-dd}",
+                Subject = $"SQL Analysis Report - {result.DatabaseName} - {result.AnalysisEndTime:yyyy-MM-dd}",
                 PlainTextContent = GeneratePlainTextReport(result),
                 HtmlContent = GenerateHtmlReport(result)
             };
@@ -119,21 +120,21 @@ public class EmailService : IEmailService
         }
     }
 
-    private string GeneratePlainTextReport(AnalysisResult result)
+    private string GeneratePlainTextReport(Core.Models.AnalysisResult result)
     {
         var sb = new StringBuilder();
         sb.AppendLine($"SQL Analysis Report");
         sb.AppendLine($"Database: {result.DatabaseName}");
         sb.AppendLine($"Server: {result.ServerName}");
-        sb.AppendLine($"Completed: {result.CompletedAt}");
-        sb.AppendLine($"Duration: {result.Duration}ms");
+        sb.AppendLine($"Completed: {result.AnalysisEndTime}");
+        sb.AppendLine($"Duration: {result.Duration.TotalMinutes:F2} minutes");
         sb.AppendLine();
         sb.AppendLine($"Summary:");
-        sb.AppendLine($"- Total Findings: {result.TotalFindings}");
-        sb.AppendLine($"- Critical: {result.CriticalFindings}");
-        sb.AppendLine($"- High: {result.HighFindings}");
-        sb.AppendLine($"- Medium: {result.MediumFindings}");
-        sb.AppendLine($"- Low: {result.LowFindings}");
+        sb.AppendLine($"- Total Findings: {result.Summary.TotalFindings}");
+        sb.AppendLine($"- Critical: {result.Summary.CriticalFindings}");
+        sb.AppendLine($"- Error: {result.Summary.ErrorFindings}");
+        sb.AppendLine($"- Warning: {result.Summary.WarningFindings}");
+        sb.AppendLine($"- Info: {result.Summary.InfoFindings}");
         sb.AppendLine();
         
         if (result.Findings.Any())
@@ -141,14 +142,14 @@ public class EmailService : IEmailService
             sb.AppendLine("Top Findings:");
             foreach (var finding in result.Findings.Take(5))
             {
-                sb.AppendLine($"- [{finding.Severity}] {finding.Title}: {finding.Description}");
+                sb.AppendLine($"- [{finding.Severity}] {finding.Message}: {finding.Description}");
             }
         }
 
         return sb.ToString();
     }
 
-    private string GenerateHtmlReport(AnalysisResult result)
+    private string GenerateHtmlReport(Core.Models.AnalysisResult result)
     {
         var html = $@"
 <!DOCTYPE html>
@@ -161,26 +162,26 @@ public class EmailService : IEmailService
         .summary {{ background-color: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0; }}
         .finding {{ border-left: 4px solid #3498db; padding: 10px; margin: 10px 0; }}
         .critical {{ border-color: #e74c3c; }}
-        .high {{ border-color: #e67e22; }}
-        .medium {{ border-color: #f39c12; }}
-        .low {{ border-color: #95a5a6; }}
+        .error {{ border-color: #e67e22; }}
+        .warning {{ border-color: #f39c12; }}
+        .info {{ border-color: #95a5a6; }}
     </style>
 </head>
 <body>
     <div class='header'>
         <h1>SQL Analysis Report</h1>
         <p>Database: {result.DatabaseName} | Server: {result.ServerName}</p>
-        <p>Completed: {result.CompletedAt:yyyy-MM-dd HH:mm:ss} | Duration: {result.Duration}ms</p>
+        <p>Completed: {result.AnalysisEndTime:yyyy-MM-dd HH:mm:ss} | Duration: {result.Duration.TotalMinutes:F2} minutes</p>
     </div>
     <div class='content'>
         <div class='summary'>
             <h2>Summary</h2>
-            <p>Total Findings: {result.TotalFindings}</p>
+            <p>Total Findings: {result.Summary.TotalFindings}</p>
             <ul>
-                <li>Critical: {result.CriticalFindings}</li>
-                <li>High: {result.HighFindings}</li>
-                <li>Medium: {result.MediumFindings}</li>
-                <li>Low: {result.LowFindings}</li>
+                <li>Critical: {result.Summary.CriticalFindings}</li>
+                <li>Error: {result.Summary.ErrorFindings}</li>
+                <li>Warning: {result.Summary.WarningFindings}</li>
+                <li>Info: {result.Summary.InfoFindings}</li>
             </ul>
         </div>
         <h2>Top Findings</h2>";
@@ -188,8 +189,8 @@ public class EmailService : IEmailService
         foreach (var finding in result.Findings.Take(10))
         {
             html += $@"
-        <div class='finding {finding.Severity.ToLower()}'>
-            <h3>{finding.Title}</h3>
+        <div class='finding {finding.Severity.ToString().ToLower()}'>
+            <h3>{finding.Message}</h3>
             <p><strong>Severity:</strong> {finding.Severity} | <strong>Category:</strong> {finding.Category}</p>
             <p>{finding.Description}</p>
             {(string.IsNullOrEmpty(finding.Recommendation) ? "" : $"<p><strong>Recommendation:</strong> {finding.Recommendation}</p>")}
