@@ -35,10 +35,12 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from 'primevue/usetoast'
+import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 
 const authStore = useAuthStore()
 const toast = useToast()
+const router = useRouter()
 
 const mockModeEnabled = computed(() => {
   return import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
@@ -50,7 +52,7 @@ const toggleMockMode = () => {
 }
 
 const handleLogout = async () => {
-  await authStore.logout()
+  await authStore.logout(router)
   toast.add({
     severity: 'info',
     summary: 'Logged Out',

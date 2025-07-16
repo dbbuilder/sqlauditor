@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
-import { useRouter } from 'vue-router'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 console.log('Auth Store API Base URL:', API_BASE_URL) // Debug log
@@ -52,7 +51,7 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async logout() {
+    async logout(router = null) {
       try {
         await axios.post(`${API_BASE_URL}/api/v1/auth/logout`)
       } catch (error) {
@@ -71,9 +70,10 @@ export const useAuthStore = defineStore('auth', {
       // Remove authorization header
       delete axios.defaults.headers.common['Authorization']
       
-      // Redirect to login
-      const router = useRouter()
-      router.push('/login')
+      // Redirect to login if router is provided
+      if (router) {
+        router.push('/login')
+      }
     },
 
     async checkAuth() {
@@ -100,7 +100,13 @@ export const useAuthStore = defineStore('auth', {
         
         return true
       } catch (error) {
-        await this.logout()
+        // Don't call logout here to avoid recursion
+        this.token = null
+        this.user = null
+        this.isAuthenticated = false
+        localStorage.removeItem('token')
+        localStorage.removeItem('tokenExpiry')
+        delete axios.defaults.headers.common['Authorization']
         return false
       }
     },

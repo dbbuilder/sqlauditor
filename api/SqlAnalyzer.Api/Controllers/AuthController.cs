@@ -94,12 +94,12 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout")]
-    [Authorize]
+    [AllowAnonymous]
     public IActionResult Logout()
     {
         // In a stateless JWT system, logout is handled client-side
         // This endpoint can be used for logging or token blacklisting in the future
-        _logger.LogInformation("User {Username} logged out", User.Identity?.Name);
+        _logger.LogInformation("User {Username} logged out", User.Identity?.Name ?? "Anonymous");
         return Ok(new { message = "Logged out successfully" });
     }
 
