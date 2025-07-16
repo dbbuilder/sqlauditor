@@ -142,6 +142,34 @@
         <Divider />
 
         <div class="form-section">
+          <h3>Notification Settings</h3>
+          
+          <div class="field">
+            <label for="notificationEmail">Email for Results (optional)</label>
+            <div class="p-inputgroup">
+              <InputText 
+                v-model="form.notificationEmail" 
+                id="notificationEmail"
+                type="email"
+                placeholder="your.email@example.com"
+                class="w-full"
+              />
+              <Button 
+                label="Test Email" 
+                icon="pi pi-send"
+                @click="testEmail"
+                :loading="testingEmail"
+                :disabled="!form.notificationEmail || !isValidEmail(form.notificationEmail)"
+                severity="secondary"
+              />
+            </div>
+            <small class="p-text-secondary">You'll receive a detailed report when the analysis completes</small>
+          </div>
+        </div>
+
+        <Divider />
+
+        <div class="form-section">
           <h3>Analysis Options</h3>
           
           <div class="field">
@@ -252,6 +280,7 @@ const form = reactive({
   connectionString: '',
   databaseType: 0, // SqlServer = 0
   analysisType: 'comprehensive',
+  notificationEmail: '',
   options: {
     includeIndexAnalysis: true,
     includeFragmentation: true,
@@ -274,6 +303,7 @@ const testing = ref(false)
 const starting = ref(false)
 const showTestResult = ref(false)
 const testResult = ref(null)
+const testingEmail = ref(false)
 
 // Connection builder
 const connectionMode = ref('builder')
@@ -410,6 +440,54 @@ async function startAnalysis() {
 // Load analysis types on mount
 loadAnalysisTypes()
 
+// Validate email format
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
+// Test email functionality
+async function testEmail() {
+  testingEmail.value = true
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/email/test`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ email: form.notificationEmail })
+    })
+    
+    const result = await response.json()
+    
+    if (result.success) {
+      toast.add({
+        severity: 'success',
+        summary: 'Test Email Sent',
+        detail: result.message,
+        life: 5000
+      })
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Test Email Failed',
+        detail: result.message || 'Failed to send test email',
+        life: 5000
+      })
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Test Email Failed',
+      detail: error.message,
+      life: 5000
+    })
+  } finally {
+    testingEmail.value = false
+  }
+}
+
 // Ensure form is properly initialized
 console.log('Form initialized with:', form)
 </script>
@@ -503,5 +581,27 @@ console.log('Form initialized with:', form)
 
 .monospace {
   font-family: 'Courier New', monospace;
+}
+
+.p-inputgroup {
+  display: flex;
+  align-items: center;
+  
+  .p-inputtext {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  
+  .p-button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+}
+
+.p-text-secondary {
+  color: #6c757d;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: block;
 }
 </style>

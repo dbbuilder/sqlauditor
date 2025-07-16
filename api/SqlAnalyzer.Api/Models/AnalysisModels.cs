@@ -8,6 +8,7 @@ namespace SqlAnalyzer.Api.Models
         public DatabaseType DatabaseType { get; set; } = DatabaseType.SqlServer;
         public string AnalysisType { get; set; } = "comprehensive";
         public AnalysisOptions Options { get; set; } = new();
+        public string? NotificationEmail { get; set; }
     }
 
     public class AnalysisOptions

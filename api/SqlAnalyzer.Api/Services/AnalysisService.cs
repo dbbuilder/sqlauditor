@@ -23,6 +23,7 @@ namespace SqlAnalyzer.Api.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly IHubContext<AnalysisHub>? _hubContext;
         private readonly ILogger<AnalysisService> _logger;
+        private readonly IEmailService? _emailService;
         private readonly ConcurrentDictionary<string, AnalysisJob> _jobs = new();
 
         public AnalysisService(
@@ -41,6 +42,9 @@ namespace SqlAnalyzer.Api.Services
             {
                 _logger.LogInformation("SignalR is disabled, real-time updates will not be available");
             }
+
+            // Try to get EmailService
+            _emailService = serviceProvider.GetService<IEmailService>();
         }
 
         public async Task<string> StartAnalysisAsync(AnalysisRequest request)
@@ -122,6 +126,20 @@ namespace SqlAnalyzer.Api.Services
                 // Step 6: Complete (100%)
                 job.Result = result;
                 await UpdateJobStatus(job, "Completed", 100, "Analysis completed successfully");
+
+                // Send email notification if requested
+                if (!string.IsNullOrEmpty(job.Request.NotificationEmail) && _emailService != null && job.Result != null)
+                {
+                    try
+                    {
+                        await _emailService.SendAnalysisReportAsync(job.Request.NotificationEmail, job.Id, job.Result);
+                        _logger.LogInformation("Analysis report sent to {Email} for job {JobId}", job.Request.NotificationEmail, job.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send analysis report email for job {JobId}", job.Id);
+                    }
+                }
             }
             catch (OperationCanceledException)
             {
@@ -132,6 +150,19 @@ namespace SqlAnalyzer.Api.Services
                 _logger.LogError(ex, "Analysis failed for job {JobId}", job.Id);
                 job.Status.ErrorMessage = ex.Message;
                 await UpdateJobStatus(job, "Failed", job.Status.ProgressPercentage, $"Analysis failed: {ex.Message}");
+
+                // Send failure notification if email was requested
+                if (!string.IsNullOrEmpty(job.Request.NotificationEmail) && _emailService != null)
+                {
+                    try
+                    {
+                        await _emailService.SendAnalysisFailureNotificationAsync(job.Request.NotificationEmail, job.Id, ex.Message);
+                    }
+                    catch (Exception emailEx)
+                    {
+                        _logger.LogError(emailEx, "Failed to send failure notification email for job {JobId}", job.Id);
+                    }
+                }
             }
         }
 
