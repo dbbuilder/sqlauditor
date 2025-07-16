@@ -40,8 +40,16 @@ jobs:
         run: dotnet publish SqlAnalyzer.Api/SqlAnalyzer.Api.csproj -c Release -o ./publish
         working-directory: api
         
+      - name: Get current time
+        id: current-time
+        run: echo "time=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+        
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: sqlanalyzer-api-win
           package: api/publish
+        env:
+          BUILD_TIMESTAMP: ${{ steps.current-time.outputs.time }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
