@@ -1,3 +1,6 @@
+using Hangfire;
+using Hangfire.InMemory;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -148,6 +151,46 @@ try
     // Add Email service
     builder.Services.AddScoped<IEmailService, EmailService>();
 
+    // Configure Hangfire
+    var hangfireConnectionString = builder.Configuration.GetConnectionString("HangfireConnection")
+        ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
+    if (builder.Environment.IsDevelopment() || string.IsNullOrEmpty(hangfireConnectionString))
+    {
+        // Use in-memory storage for development
+        builder.Services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseInMemoryStorage());
+    }
+    else
+    {
+        // Use SQL Server for production
+        builder.Services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(hangfireConnectionString, new SqlServerStorageOptions
+            {
+                CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                QueuePollInterval = TimeSpan.Zero,
+                UseRecommendedIsolationLevel = true,
+                DisableGlobalLocks = true
+            }));
+    }
+
+    // Add Hangfire server
+    builder.Services.AddHangfireServer(options =>
+    {
+        options.WorkerCount = Environment.ProcessorCount * 2;
+        options.Queues = new[] { "analysis", "default" };
+    });
+
+    // Register Hangfire analysis service
+    builder.Services.AddScoped<IHangfireAnalysisService, HangfireAnalysisService>();
+
     // Add SignalR for real-time updates
     var signalRSettings = builder.Configuration.GetSection("SignalR").Get<SignalRSettings>() ?? new SignalRSettings();
     builder.Services.AddSignalR(options =>
@@ -229,6 +272,14 @@ try
     }
 
     app.MapHealthChecks("/health");
+
+    // Add Hangfire Dashboard (protected by authentication)
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new HangfireAuthorizationFilter() },
+        DisplayStorageConnectionString = false,
+        DashboardTitle = "SQL Analyzer Background Jobs"
+    });
 
     app.Run();
 }

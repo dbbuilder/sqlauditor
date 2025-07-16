@@ -15,20 +15,26 @@ namespace SqlAnalyzer.Api.Controllers
     public class AnalysisController : ControllerBase
     {
         private readonly IAnalysisService _analysisService;
+        private readonly IHangfireAnalysisService _hangfireAnalysisService;
         private readonly IConnectionFactory _connectionFactory;
         private readonly IHubContext<AnalysisHub> _hubContext;
         private readonly ILogger<AnalysisController> _logger;
+        private readonly IConfiguration _configuration;
 
         public AnalysisController(
             IAnalysisService analysisService,
+            IHangfireAnalysisService hangfireAnalysisService,
             IConnectionFactory connectionFactory,
             IHubContext<AnalysisHub> hubContext,
-            ILogger<AnalysisController> logger)
+            ILogger<AnalysisController> logger,
+            IConfiguration configuration)
         {
             _analysisService = analysisService;
+            _hangfireAnalysisService = hangfireAnalysisService;
             _connectionFactory = connectionFactory;
             _hubContext = hubContext;
             _logger = logger;
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -44,7 +50,11 @@ namespace SqlAnalyzer.Api.Controllers
                     return BadRequest(ModelState);
 
                 // Start analysis (returns immediately with job ID)
-                var jobId = await _analysisService.StartAnalysisAsync(request);
+                // Use Hangfire if enabled, otherwise use in-memory service
+                var useHangfire = _configuration.GetValue<bool>("Hangfire:Enabled", true);
+                var jobId = useHangfire
+                    ? _hangfireAnalysisService.StartAnalysis(request)
+                    : await _analysisService.StartAnalysisAsync(request);
 
                 return Ok(new
                 {
@@ -66,7 +76,11 @@ namespace SqlAnalyzer.Api.Controllers
         [HttpGet("status/{jobId}")]
         public async Task<IActionResult> GetAnalysisStatus(string jobId)
         {
-            var status = await _analysisService.GetAnalysisStatusAsync(jobId);
+            var useHangfire = _configuration.GetValue<bool>("Hangfire:Enabled", true);
+            var status = useHangfire
+                ? await _hangfireAnalysisService.GetAnalysisStatusAsync(jobId)
+                : await _analysisService.GetAnalysisStatusAsync(jobId);
+
             if (status == null)
                 return NotFound(new { error = "Analysis job not found" });
 
@@ -79,7 +93,11 @@ namespace SqlAnalyzer.Api.Controllers
         [HttpGet("results/{jobId}")]
         public async Task<IActionResult> GetAnalysisResults(string jobId)
         {
-            var results = await _analysisService.GetAnalysisResultsAsync(jobId);
+            var useHangfire = _configuration.GetValue<bool>("Hangfire:Enabled", true);
+            var results = useHangfire
+                ? await _hangfireAnalysisService.GetAnalysisResultAsync(jobId)
+                : await _analysisService.GetAnalysisResultsAsync(jobId);
+
             if (results == null)
                 return NotFound(new { error = "Results not found" });
 
@@ -140,6 +158,14 @@ namespace SqlAnalyzer.Api.Controllers
         [HttpPost("cancel/{jobId}")]
         public async Task<IActionResult> CancelAnalysis(string jobId)
         {
+            var useHangfire = _configuration.GetValue<bool>("Hangfire:Enabled", true);
+
+            if (useHangfire)
+            {
+                _hangfireAnalysisService.CancelAnalysis(jobId);
+                return Ok(new { message = "Analysis cancellation requested" });
+            }
+
             var cancelled = await _analysisService.CancelAnalysisAsync(jobId);
             if (!cancelled)
                 return NotFound(new { error = "Analysis job not found or already completed" });
