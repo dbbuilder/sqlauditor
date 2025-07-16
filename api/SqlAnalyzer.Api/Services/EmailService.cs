@@ -138,14 +138,14 @@ public class EmailService : IEmailService
         sb.AppendLine("=============================================================");
         sb.AppendLine("                      SUMMARY");
         sb.AppendLine("=============================================================");
-        
+
         // Calculate summary from findings
         var criticalCount = result.Findings.Count(f => f.Severity == "Critical");
         var errorCount = result.Findings.Count(f => f.Severity == "High");
         var warningCount = result.Findings.Count(f => f.Severity == "Medium");
         var infoCount = result.Findings.Count(f => f.Severity == "Low" || f.Severity == "Info");
         var totalFindings = result.Findings.Count;
-        
+
         sb.AppendLine($"Total Findings: {totalFindings}");
         sb.AppendLine($"  - Critical:   {criticalCount}");
         sb.AppendLine($"  - Error:      {errorCount}");
@@ -155,13 +155,13 @@ public class EmailService : IEmailService
 
         // Group findings by severity
         var findingsBySeverity = result.Findings.GroupBy(f => f.Severity).OrderBy(g => g.Key);
-        
+
         foreach (var severityGroup in findingsBySeverity)
         {
             sb.AppendLine("=============================================================");
             sb.AppendLine($"                 {severityGroup.Key.ToString().ToUpper()} FINDINGS ({severityGroup.Count()})");
             sb.AppendLine("=============================================================");
-            
+
             foreach (var finding in severityGroup)
             {
                 sb.AppendLine();
@@ -181,7 +181,7 @@ public class EmailService : IEmailService
             sb.AppendLine("=============================================================");
             sb.AppendLine("                  PERFORMANCE METRICS");
             sb.AppendLine("=============================================================");
-            
+
             foreach (var metric in result.Metrics)
             {
                 sb.AppendLine();
@@ -203,7 +203,7 @@ public class EmailService : IEmailService
             sb.AppendLine("=============================================================");
             sb.AppendLine("                   RECOMMENDATIONS");
             sb.AppendLine("=============================================================");
-            
+
             foreach (var rec in result.Recommendations.OrderBy(r => r.Priority))
             {
                 sb.AppendLine();
@@ -623,13 +623,13 @@ public class EmailService : IEmailService
 
         // Add all findings grouped by severity
         var findingsBySeverity = result.Findings.GroupBy(f => f.Severity).OrderBy(g => GetSeverityOrder(g.Key));
-        
+
         foreach (var severityGroup in findingsBySeverity)
         {
             html += $@"
             <div class='findings-section'>
                 <h3>{severityGroup.Key} Findings ({severityGroup.Count()})</h3>";
-            
+
             foreach (var finding in severityGroup)
             {
                 var severityClass = finding.Severity.ToLower();
@@ -647,7 +647,7 @@ public class EmailService : IEmailService
                     </div>")}
                 </div>";
             }
-            
+
             html += @"
             </div>";
         }

@@ -186,12 +186,12 @@ try
     }
 
     var app = builder.Build();
-    
+
     // Log startup information
     var assembly = System.Reflection.Assembly.GetExecutingAssembly();
     var version = assembly.GetName().Version?.ToString() ?? "1.0.0.0";
     var buildDate = File.GetLastWriteTimeUtc(assembly.Location).ToString("yyyy-MM-dd HH:mm:ss UTC");
-    
+
     app.Logger.LogInformation("==============================================");
     app.Logger.LogInformation("SQL Analyzer API Starting");
     app.Logger.LogInformation("Version: {Version}", version);
