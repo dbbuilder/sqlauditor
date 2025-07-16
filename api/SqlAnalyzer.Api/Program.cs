@@ -273,13 +273,20 @@ try
 
     app.MapHealthChecks("/health");
 
-    // Add Hangfire Dashboard (protected by authentication)
-    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    // Add Hangfire Dashboard
+    var hangfireOptions = new DashboardOptions
     {
-        Authorization = new[] { new HangfireAuthorizationFilter() },
         DisplayStorageConnectionString = false,
         DashboardTitle = "SQL Analyzer Background Jobs"
-    });
+    };
+
+    // Only require authentication in production
+    if (!app.Environment.IsDevelopment())
+    {
+        hangfireOptions.Authorization = new[] { new HangfireAuthorizationFilter(requireAuthentication: true) };
+    }
+    
+    app.UseHangfireDashboard("/hangfire", hangfireOptions);
 
     app.Run();
 }
