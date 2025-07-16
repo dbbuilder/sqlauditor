@@ -1,14 +1,13 @@
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using SqlAnalyzer.Api.Models;
-using SqlAnalyzer.Core.Models;
 using System.Text;
 
 namespace SqlAnalyzer.Api.Services;
 
 public interface IEmailService
 {
-    Task SendAnalysisReportAsync(string toEmail, string jobId, Core.Models.AnalysisResult result);
+    Task SendAnalysisReportAsync(string toEmail, string jobId, AnalysisResult result);
     Task SendAnalysisFailureNotificationAsync(string toEmail, string jobId, string errorMessage);
 }
 
@@ -48,7 +47,7 @@ public class EmailService : IEmailService
         }
     }
 
-    public async Task SendAnalysisReportAsync(string toEmail, string jobId, Core.Models.AnalysisResult result)
+    public async Task SendAnalysisReportAsync(string toEmail, string jobId, AnalysisResult result)
     {
         if (!_emailSettings.Enabled || _sendGridClient == null)
         {
@@ -61,7 +60,7 @@ public class EmailService : IEmailService
             var msg = new SendGridMessage
             {
                 From = new EmailAddress(_emailSettings.FromEmail, _emailSettings.FromName),
-                Subject = $"SQL Analysis Report - {result.DatabaseName} - {result.AnalysisEndTime:yyyy-MM-dd}",
+                Subject = $"SQL Analysis Report - {result.Database.Name} - {result.AnalyzedAt:yyyy-MM-dd}",
                 PlainTextContent = GeneratePlainTextReport(result),
                 HtmlContent = GenerateHtmlReport(result)
             };
@@ -120,30 +119,38 @@ public class EmailService : IEmailService
         }
     }
 
-    private string GeneratePlainTextReport(Core.Models.AnalysisResult result)
+    private string GeneratePlainTextReport(AnalysisResult result)
     {
         var sb = new StringBuilder();
         sb.AppendLine("=============================================================");
         sb.AppendLine("                    SQL ANALYSIS REPORT");
         sb.AppendLine("=============================================================");
         sb.AppendLine();
-        sb.AppendLine($"Database:      {result.DatabaseName}");
-        sb.AppendLine($"Server:        {result.ServerName}");
-        sb.AppendLine($"Type:          {result.DatabaseType}");
-        sb.AppendLine($"Analyzer:      {result.AnalyzerName}");
-        sb.AppendLine($"Completed:     {result.AnalysisEndTime:yyyy-MM-dd HH:mm:ss}");
-        sb.AppendLine($"Duration:      {result.Duration.TotalMinutes:F2} minutes");
-        sb.AppendLine($"Objects:       {result.Summary.TotalObjectsAnalyzed:N0} analyzed");
-        sb.AppendLine($"Total Rows:    {result.Summary.TotalRows:N0}");
+        sb.AppendLine($"Database:      {result.Database.Name}");
+        sb.AppendLine($"Server:        {result.Database.ServerVersion}");
+        sb.AppendLine($"Type:          SQL Server");
+        sb.AppendLine($"Analyzer:      SQL Analyzer");
+        sb.AppendLine($"Completed:     {result.AnalyzedAt:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"Duration:      N/A");
+        sb.AppendLine($"Objects:       {result.Database.TableCount + result.Database.IndexCount + result.Database.ProcedureCount + result.Database.ViewCount:N0} analyzed");
+        sb.AppendLine($"Total Rows:    {result.Database.TotalRows:N0}");
         sb.AppendLine();
         sb.AppendLine("=============================================================");
         sb.AppendLine("                      SUMMARY");
         sb.AppendLine("=============================================================");
-        sb.AppendLine($"Total Findings: {result.Summary.TotalFindings}");
-        sb.AppendLine($"  - Critical:   {result.Summary.CriticalFindings}");
-        sb.AppendLine($"  - Error:      {result.Summary.ErrorFindings}");
-        sb.AppendLine($"  - Warning:    {result.Summary.WarningFindings}");
-        sb.AppendLine($"  - Info:       {result.Summary.InfoFindings}");
+        
+        // Calculate summary from findings
+        var criticalCount = result.Findings.Count(f => f.Severity == "Critical");
+        var errorCount = result.Findings.Count(f => f.Severity == "High");
+        var warningCount = result.Findings.Count(f => f.Severity == "Medium");
+        var infoCount = result.Findings.Count(f => f.Severity == "Low" || f.Severity == "Info");
+        var totalFindings = result.Findings.Count;
+        
+        sb.AppendLine($"Total Findings: {totalFindings}");
+        sb.AppendLine($"  - Critical:   {criticalCount}");
+        sb.AppendLine($"  - Error:      {errorCount}");
+        sb.AppendLine($"  - Warning:    {warningCount}");
+        sb.AppendLine($"  - Info:       {infoCount}");
         sb.AppendLine();
 
         // Group findings by severity
@@ -158,16 +165,11 @@ public class EmailService : IEmailService
             foreach (var finding in severityGroup)
             {
                 sb.AppendLine();
-                sb.AppendLine($"[{finding.Severity}] {finding.Message}");
+                sb.AppendLine($"[{finding.Severity}] {finding.Title}");
                 sb.AppendLine($"Category:     {finding.Category}");
-                sb.AppendLine($"Object Type:  {finding.ObjectType}");
-                if (!string.IsNullOrEmpty(finding.Schema))
-                    sb.AppendLine($"Schema:       {finding.Schema}");
-                if (!string.IsNullOrEmpty(finding.AffectedObject))
-                    sb.AppendLine($"Object:       {finding.AffectedObject}");
                 sb.AppendLine($"Description:  {finding.Description}");
-                if (!string.IsNullOrEmpty(finding.Recommendation))
-                    sb.AppendLine($"Recommendation: {finding.Recommendation}");
+                if (!string.IsNullOrEmpty(finding.Impact))
+                    sb.AppendLine($"Impact:       {finding.Impact}");
                 sb.AppendLine(new string('-', 60));
             }
             sb.AppendLine();
@@ -229,8 +231,16 @@ public class EmailService : IEmailService
         return sb.ToString();
     }
 
-    private string GenerateHtmlReport(Core.Models.AnalysisResult result)
+    private string GenerateHtmlReport(AnalysisResult result)
     {
+        // Calculate summary from findings
+        var criticalCount = result.Findings.Count(f => f.Severity == "Critical");
+        var errorCount = result.Findings.Count(f => f.Severity == "High");
+        var warningCount = result.Findings.Count(f => f.Severity == "Medium");
+        var infoCount = result.Findings.Count(f => f.Severity == "Low" || f.Severity == "Info");
+        var totalFindings = result.Findings.Count;
+        var totalObjects = result.Database.TableCount + result.Database.IndexCount + result.Database.ProcedureCount + result.Database.ViewCount;
+
         var html = $@"
 <!DOCTYPE html>
 <html>
@@ -374,15 +384,15 @@ public class EmailService : IEmailService
             border-color: #e74c3c; 
             background: #fee;
         }}
-        .finding.error {{ 
+        .finding.high {{ 
             border-color: #e67e22; 
             background: #fef6e6;
         }}
-        .finding.warning {{ 
+        .finding.medium {{ 
             border-color: #f39c12; 
             background: #fffbf0;
         }}
-        .finding.info {{ 
+        .finding.low, .finding.info {{ 
             border-color: #3498db;
             background: #f0f8ff;
         }}
@@ -406,24 +416,12 @@ public class EmailService : IEmailService
             margin: 10px 0;
             line-height: 1.6;
         }}
-        .finding .recommendation {{
+        .finding .impact {{
             background: rgba(52, 152, 219, 0.1);
             padding: 10px 15px;
             border-radius: 5px;
             margin-top: 10px;
             border-left: 3px solid #3498db;
-        }}
-        .finding .recommendation strong {{
-            color: #2980b9;
-        }}
-        .finding .affected-object {{
-            margin-top: 10px;
-            padding: 8px 12px;
-            background: rgba(0,0,0,0.05);
-            border-radius: 5px;
-            display: inline-block;
-            font-family: monospace;
-            font-size: 13px;
         }}
         
         /* Performance Metrics */
@@ -470,14 +468,6 @@ public class EmailService : IEmailService
         .metric-item .details {{
             font-size: 14px;
             color: #7f8c8d;
-        }}
-        .metric-item .impact {{
-            float: right;
-            background: #ffeb3b;
-            padding: 2px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            color: #333;
         }}
         
         /* Recommendations */
@@ -566,32 +556,32 @@ public class EmailService : IEmailService
     <div class='container'>
         <div class='header'>
             <h1>SQL Analysis Report</h1>
-            <p><strong>{result.DatabaseName}</strong> on {result.ServerName}</p>
-            <p>Analysis Type: {result.DatabaseType} | Completed: {result.AnalysisEndTime:MMMM dd, yyyy HH:mm:ss}</p>
-            <p>Duration: {result.Duration.TotalMinutes:F2} minutes | Objects Analyzed: {result.Summary.TotalObjectsAnalyzed}</p>
+            <p><strong>{result.Database.Name}</strong> on {result.Database.ServerVersion}</p>
+            <p>Analysis Type: SQL Server | Completed: {result.AnalyzedAt:MMMM dd, yyyy HH:mm:ss}</p>
+            <p>Objects Analyzed: {totalObjects}</p>
         </div>
         
         <div class='content'>
             <!-- Summary Section -->
             <div class='summary'>
                 <h2>Executive Summary</h2>
-                <p>This comprehensive analysis identified <strong>{result.Summary.TotalFindings}</strong> findings across your database.</p>
+                <p>This comprehensive analysis identified <strong>{totalFindings}</strong> findings across your database.</p>
                 <div class='summary-grid'>
                     <div class='summary-item critical'>
-                        <div class='value'>{result.Summary.CriticalFindings}</div>
+                        <div class='value'>{criticalCount}</div>
                         <div class='label'>Critical</div>
                     </div>
                     <div class='summary-item error'>
-                        <div class='value'>{result.Summary.ErrorFindings}</div>
-                        <div class='label'>Errors</div>
+                        <div class='value'>{errorCount}</div>
+                        <div class='label'>High</div>
                     </div>
                     <div class='summary-item warning'>
-                        <div class='value'>{result.Summary.WarningFindings}</div>
-                        <div class='label'>Warnings</div>
+                        <div class='value'>{warningCount}</div>
+                        <div class='label'>Medium</div>
                     </div>
                     <div class='summary-item info'>
-                        <div class='value'>{result.Summary.InfoFindings}</div>
-                        <div class='label'>Info</div>
+                        <div class='value'>{infoCount}</div>
+                        <div class='label'>Low/Info</div>
                     </div>
                 </div>
             </div>
@@ -604,35 +594,35 @@ public class EmailService : IEmailService
                         <div class='icon'>📊</div>
                         <div class='details'>
                             <div class='label'>Total Rows</div>
-                            <div class='value'>{result.Summary.TotalRows:N0}</div>
+                            <div class='value'>{result.Database.TotalRows:N0}</div>
                         </div>
                     </div>
                     <div class='info-item'>
                         <div class='icon'>📁</div>
                         <div class='details'>
-                            <div class='label'>Objects Analyzed</div>
-                            <div class='value'>{result.Summary.TotalObjectsAnalyzed:N0}</div>
-                        </div>
-                    </div>
-                    <div class='info-item'>
-                        <div class='icon'>⏱️</div>
-                        <div class='details'>
-                            <div class='label'>Analysis Time</div>
-                            <div class='value'>{result.Duration.TotalMinutes:F1} min</div>
+                            <div class='label'>Tables</div>
+                            <div class='value'>{result.Database.TableCount:N0}</div>
                         </div>
                     </div>
                     <div class='info-item'>
                         <div class='icon'>🔍</div>
                         <div class='details'>
-                            <div class='label'>Analyzer Version</div>
-                            <div class='value'>{result.AnalyzerName}</div>
+                            <div class='label'>Indexes</div>
+                            <div class='value'>{result.Database.IndexCount:N0}</div>
+                        </div>
+                    </div>
+                    <div class='info-item'>
+                        <div class='icon'>⚙️</div>
+                        <div class='details'>
+                            <div class='label'>Procedures</div>
+                            <div class='value'>{result.Database.ProcedureCount:N0}</div>
                         </div>
                     </div>
                 </div>
             </div>";
 
         // Add all findings grouped by severity
-        var findingsBySeverity = result.Findings.GroupBy(f => f.Severity).OrderBy(g => g.Key);
+        var findingsBySeverity = result.Findings.GroupBy(f => f.Severity).OrderBy(g => GetSeverityOrder(g.Key));
         
         foreach (var severityGroup in findingsBySeverity)
         {
@@ -642,21 +632,19 @@ public class EmailService : IEmailService
             
             foreach (var finding in severityGroup)
             {
+                var severityClass = finding.Severity.ToLower();
                 html += $@"
-                <div class='finding {finding.Severity.ToString().ToLower()}'>
-                    <h3>{finding.Message}</h3>
+                <div class='finding {severityClass}'>
+                    <h3>{finding.Title}</h3>
                     <div class='metadata'>
                         <span><strong>Category:</strong> {finding.Category}</span>
-                        <span><strong>Type:</strong> {finding.ObjectType}</span>
-                        {(string.IsNullOrEmpty(finding.Schema) ? "" : $"<span><strong>Schema:</strong> {finding.Schema}</span>")}
+                        <span><strong>Severity:</strong> {finding.Severity}</span>
                     </div>
                     <div class='description'>{finding.Description}</div>
-                    {(string.IsNullOrEmpty(finding.Recommendation) ? "" : $@"
-                    <div class='recommendation'>
-                        <strong>Recommendation:</strong> {finding.Recommendation}
+                    {(string.IsNullOrEmpty(finding.Impact) ? "" : $@"
+                    <div class='impact'>
+                        <strong>Impact:</strong> {finding.Impact}
                     </div>")}
-                    {(string.IsNullOrEmpty(finding.AffectedObject) ? "" : $@"
-                    <div class='affected-object'>{finding.Schema}.{finding.AffectedObject}</div>")}
                 </div>";
             }
             
@@ -706,7 +694,7 @@ public class EmailService : IEmailService
             <div class='recommendations-section'>
                 <h2>Recommendations</h2>";
 
-            foreach (var rec in result.Recommendations.OrderBy(r => r.Priority))
+            foreach (var rec in result.Recommendations.OrderBy(r => GetPriorityOrder(r.Priority)))
             {
                 html += $@"
                 <div class='recommendation-card'>
@@ -741,5 +729,29 @@ public class EmailService : IEmailService
 </html>";
 
         return html;
+    }
+
+    private int GetSeverityOrder(string severity)
+    {
+        return severity.ToLower() switch
+        {
+            "critical" => 1,
+            "high" => 2,
+            "medium" => 3,
+            "low" => 4,
+            "info" => 5,
+            _ => 6
+        };
+    }
+
+    private int GetPriorityOrder(string priority)
+    {
+        return priority.ToLower() switch
+        {
+            "high" => 1,
+            "medium" => 2,
+            "low" => 3,
+            _ => 4
+        };
     }
 }

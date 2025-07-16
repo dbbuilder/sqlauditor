@@ -67,6 +67,16 @@ namespace SqlAnalyzer.Core.Models
         /// Additional metadata about the analysis
         /// </summary>
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+
+        /// <summary>
+        /// Performance metrics collected during analysis
+        /// </summary>
+        public List<Metric> Metrics { get; set; } = new List<Metric>();
+
+        /// <summary>
+        /// Recommendations based on analysis findings
+        /// </summary>
+        public List<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
     }
 
     /// <summary>
@@ -108,5 +118,67 @@ namespace SqlAnalyzer.Core.Models
         /// Total number of rows across all tables
         /// </summary>
         public long TotalRows { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a performance or analysis metric
+    /// </summary>
+    public class Metric
+    {
+        /// <summary>
+        /// Name of the metric
+        /// </summary>
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Value of the metric
+        /// </summary>
+        public string Value { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Category of the metric
+        /// </summary>
+        public string Category { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Additional details about the metric
+        /// </summary>
+        public Dictionary<string, string> Details { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a recommendation based on analysis findings
+    /// </summary>
+    public class Recommendation
+    {
+        /// <summary>
+        /// Category of the recommendation
+        /// </summary>
+        public string Category { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Title of the recommendation
+        /// </summary>
+        public string Title { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Detailed description of the recommendation
+        /// </summary>
+        public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Priority of the recommendation (High, Medium, Low)
+        /// </summary>
+        public string Priority { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Estimated impact of implementing this recommendation
+        /// </summary>
+        public string EstimatedImpact { get; set; } = string.Empty;
+
+        /// <summary>
+        /// List of specific actions to take
+        /// </summary>
+        public List<string> Actions { get; set; } = new List<string>();
     }
 }

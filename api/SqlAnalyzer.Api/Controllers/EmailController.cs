@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SqlAnalyzer.Api.Services;
-using SqlAnalyzer.Core.Models;
+using SqlAnalyzer.Api.Models;
 
 namespace SqlAnalyzer.Api.Controllers
 {
@@ -30,45 +30,49 @@ namespace SqlAnalyzer.Api.Controllers
                 // Create a sample analysis result for testing
                 var testResult = new AnalysisResult
                 {
-                    AnalyzerName = "Test Analyzer",
-                    DatabaseName = "TestDatabase",
-                    ServerName = "TestServer",
-                    DatabaseType = "SQL Server",
-                    AnalysisStartTime = DateTime.UtcNow.AddMinutes(-5),
-                    AnalysisEndTime = DateTime.UtcNow,
-                    Success = true,
-                    Summary = new AnalysisSummary
+                    JobId = "test-" + Guid.NewGuid().ToString(),
+                    AnalyzedAt = DateTime.UtcNow,
+                    Database = new DatabaseInfo
                     {
-                        TotalObjectsAnalyzed = 10,
-                        CriticalFindings = 1,
-                        ErrorFindings = 2,
-                        WarningFindings = 3,
-                        InfoFindings = 4,
-                        TotalRows = 1000
+                        Name = "TestDatabase",
+                        ServerVersion = "Microsoft SQL Server 2019",
+                        Edition = "Enterprise",
+                        SizeMB = 1024,
+                        TableCount = 25,
+                        IndexCount = 45,
+                        ProcedureCount = 15,
+                        ViewCount = 10,
+                        TotalRows = 100000
                     },
                     Findings = new List<Finding>
                     {
                         new Finding
                         {
-                            Severity = Severity.Critical,
+                            Severity = "Critical",
                             Category = "Performance",
-                            Message = "Missing index on Orders table",
+                            Title = "Missing index on Orders table",
                             Description = "The Orders table is missing a critical index on the CustomerID column",
-                            Recommendation = "CREATE INDEX IX_Orders_CustomerID ON Orders(CustomerID)",
-                            AffectedObject = "Orders",
-                            ObjectType = "Table",
-                            Schema = "dbo"
+                            Impact = "Query performance degradation of up to 80% on customer lookups"
                         },
                         new Finding
                         {
-                            Severity = Severity.Warning,
+                            Severity = "Medium",
                             Category = "Security",
-                            Message = "Weak password policy",
+                            Title = "Weak password policy",
                             Description = "The database allows passwords shorter than 8 characters",
-                            Recommendation = "Update password policy to require minimum 8 characters",
-                            AffectedObject = "Server",
-                            ObjectType = "Configuration",
-                            Schema = "N/A"
+                            Impact = "Increased risk of unauthorized access"
+                        }
+                    },
+                    Recommendations = new List<Recommendation>
+                    {
+                        new Recommendation
+                        {
+                            Category = "Performance",
+                            Title = "Create Missing Indexes",
+                            Description = "Add indexes to improve query performance",
+                            Priority = "High",
+                            EstimatedImpact = "20-50% query performance improvement",
+                            Actions = new List<string> { "CREATE INDEX IX_Orders_CustomerID ON Orders(CustomerID)" }
                         }
                     }
                 };
