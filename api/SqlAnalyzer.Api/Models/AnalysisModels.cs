@@ -48,6 +48,7 @@ namespace SqlAnalyzer.Api.Models
         public PerformanceMetrics Performance { get; set; } = new();
         public SecurityAudit Security { get; set; } = new();
         public List<Recommendation> Recommendations { get; set; } = new();
+        public List<Metric> Metrics { get; set; } = new();
         public DateTime AnalyzedAt { get; set; }
     }
 
@@ -168,5 +169,13 @@ namespace SqlAnalyzer.Api.Models
         public string Status { get; set; } = string.Empty;
         public int FindingsCount { get; set; }
         public string? ErrorMessage { get; set; }
+    }
+
+    public class Metric
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public Dictionary<string, string>? Details { get; set; }
     }
 }
