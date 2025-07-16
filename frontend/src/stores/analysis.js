@@ -19,8 +19,13 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   // Actions
   async function initializeSignalR() {
-    // Re-enable SignalR with proper error handling
-    console.log('Initializing SignalR connection...')
+    // Check if SignalR is enabled
+    const signalREnabled = import.meta.env.VITE_ENABLE_SIGNALR === 'true'
+    
+    if (!signalREnabled) {
+      console.log('SignalR is disabled')
+      return
+    }
     
     try {
       // Get the auth token for SignalR
